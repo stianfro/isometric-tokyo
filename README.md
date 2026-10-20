@@ -63,6 +63,6 @@ render previews. It contains no cluster access, DNS tokens, private deployment
 overlays, lab endpoints or personal filesystem paths. Preview export removes
 renderer metadata that can expose local filenames without changing image pixels.
 
-Original code licensing is awaiting the owner's choice. No open-source code
-licence is granted yet. Geographic data and derived previews retain their
-[separate upstream terms](THIRD_PARTY_NOTICES.md).
+Original project code is licensed under the [MIT License](LICENSE).
+This does not relicense PLATEAU data, aerial imagery, terrain or derived previews;
+those retain their [separate upstream terms](THIRD_PARTY_NOTICES.md).

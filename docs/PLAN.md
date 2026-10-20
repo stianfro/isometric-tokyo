@@ -4,6 +4,9 @@ Status: proposed, not deployed. Start with the existing roughly 800 × 800 metre
 Shinjuku sample and 2400 × 2400 renders. The first milestone is a public,
 source-only viewer, not a citywide map or an AI rendering service.
 
+Confirmed: Cloudflare manages DNS. Ingress/Gateway, certificate issuance and the
+DNS-only versus proxied traffic choice still need confirmation.
+
 ## Architecture
 
 ```text
@@ -58,11 +61,16 @@ inspected; credits are visible; no console errors or third-party telemetry.
   explicitly. DNS aliases do not change the browser's requested hostname, so
   routing and the TLS certificate must cover `isometric.tokyo`, not merely the
   infrastructure hostname. [Kubernetes Ingress documentation](https://kubernetes.io/docs/concepts/services-networking/ingress/)
-- For the domain apex, use provider-supported ALIAS/ANAME or CNAME flattening
-  toward `edge.example.net`; otherwise use A/AAAA records for the reachable
-  address. Do not assume an ordinary apex CNAME works. An optional `www` CNAME
-  needs its own host/certificate coverage and redirect to the apex.
-  [Apex DNS options](https://developers.cloudflare.com/dns/manage-dns-records/how-to/create-zone-apex/)
+- Plan a Cloudflare apex `CNAME` (`@`) toward the privately configured target
+  represented by `edge.example.net`. Cloudflare flattens apex CNAME records on
+  all plans. An optional `www` CNAME needs host/certificate coverage and a
+  redirect to the apex. No DNS record has been configured by this project.
+  [Cloudflare CNAME flattening](https://developers.cloudflare.com/dns/cname-flattening/set-up-cname-flattening/)
+- Decide DNS-only versus Cloudflare proxying before deployment. DNS-only needs
+  a publicly trusted origin certificate covering `isometric.tokyo`. If proxying
+  is chosen, use Full (strict) with a valid matching origin certificate, never
+  Flexible. Cloudflare Tunnel is not assumed or required by this plan.
+  [Cloudflare Full (strict)](https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full-strict/)
 - Reuse an existing cert-manager issuer where available. Choose HTTP-01 or
   DNS-01 according to reachable ports, DNS provider support and existing lab
   practice. Keep DNS tokens and certificate keys out of the repository. For
@@ -101,7 +109,7 @@ shadow jumps or scale changes. Dataset and style revisions remain reproducible.
 
 ## Decisions needed before deployment
 
-- DNS provider and apex-alias support; exact target retained privately.
+- Cloudflare DNS-only versus proxying; exact alias target retained privately.
 - Existing ingress/Gateway implementation, version and route conventions.
 - cert-manager availability, issuer and supported challenge method.
 - AMD64/ARM64 nodes; GitOps and registry image-pull arrangements.
