@@ -3,7 +3,7 @@
 An independent isometric Tokyo map experiment using open Project PLATEAU data.
 
 **Current state:** a reproducible, unstyled Shinjuku source-quality study. The
-interactive viewer and Kubernetes deployment are planned, not implemented.
+interactive viewer is planned, not implemented.
 
 ![Unstyled Shinjuku sample](previews/shinjuku-isometric.png)
 
@@ -55,14 +55,3 @@ tool caches stay under `.cache/`. Source services may change after this snapshot
 or Blender. The first Ruff invocation needs network access; `UV_OFFLINE=true`
 works once the pinned tool is cached. `just package` produces a local source kit
 after a successful render. Large source files and Blender projects are not in Git.
-
-## Public repository boundaries
-
-This repository contains original scripts, tests, documentation and attributed
-render previews. It contains no cluster access, DNS tokens, private deployment
-overlays, lab endpoints or personal filesystem paths. Preview export removes
-renderer metadata that can expose local filenames without changing image pixels.
-
-Original project code is licensed under the [MIT License](LICENSE).
-This does not relicense PLATEAU data, aerial imagery, terrain or derived previews;
-those retain their [separate upstream terms](THIRD_PARTY_NOTICES.md).
