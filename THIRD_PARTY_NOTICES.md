@@ -1,7 +1,8 @@
 # Geographic data and preview notices
 
-The original project code and the geographic content have separate licensing.
-No code licence in this repository replaces the terms below.
+The original project code is licensed under the [MIT License](LICENSE).
+Geographic data and derived previews are not covered by that licence; the MIT
+License does not replace the source terms below.
 
 ## Attribution for previews
 
