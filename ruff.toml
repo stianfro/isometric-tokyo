@@ -1,0 +1,11 @@
+target-version = "py311"
+line-length = 88
+cache-dir = ".cache/ruff"
+
+[lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"scripts/render_sample.py" = ["E402"]
+"tests/test_verify_outputs.py" = ["E402"]
