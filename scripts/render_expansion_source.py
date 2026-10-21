@@ -253,7 +253,34 @@ def overlap_audit(directory, previous_directory):
     }
 
 
-def finalize(directory, previous_directory):
+def validate_support_audit(index, audit):
+    inputs = index["provenance"]["input_sha256"]
+    if (
+        audit.get("config_sha256") != index["source_config_sha256"]
+        or audit.get("building_manifest_sha256") != inputs["building-manifest"]
+        or audit.get("tile_selection_complete") is not True
+        or audit.get("required_tiles") != index["geometry"]["mesh_count"]
+        or audit.get("present_tiles") != audit.get("required_tiles")
+        or audit.get("missing_tiles") != 0
+        or audit.get("metadata_mismatch_urls") != []
+        or audit.get("extra_tiles") != 0
+        or audit.get("terrain", {}).get("mesh_sha256") != inputs["terrain-mesh"]
+        or audit.get("terrain", {}).get("terrain_surface_support_complete") is not True
+        or audit.get("terrain", {}).get("receiver_height_range_verified") is not True
+        or audit.get("orthophoto", {}).get("manifest_sha256")
+        != inputs["ground-manifest"]
+        or audit.get("orthophoto", {}).get("orthophoto_support_complete") is not True
+    ):
+        raise ValueError(
+            "Source support audit must pass and bind the actual rendered input hashes"
+        )
+
+
+def finalize(
+    directory,
+    previous_directory,
+    coverage_audit=Path(".cache/coverage/expansion-audit.json"),
+):
     index = json.loads((directory / INDEX).read_text())
     if index.get("native_resolution_px") != [SIZE, SIZE] or index.get(
         "global_bounds_px"
@@ -267,7 +294,19 @@ def finalize(directory, previous_directory):
     validate_camera(config)
     if index.get("source_config_sha256") != config.fingerprint:
         raise ValueError("Expansion source config checksum mismatch")
+    audit = json.loads(coverage_audit.read_text())
+    validate_support_audit(index, audit)
+    support_path = directory / "source-support.json"
+    support_path.write_text(json.dumps(audit, indent=2, allow_nan=False) + "\n")
     index = finalize_partition(directory, grid_plan(), index_name=INDEX)
+    index["source_support"] = {
+        "path": support_path.name,
+        "sha256": digest(support_path),
+        "selection_complete": True,
+        "terrain_support_complete": True,
+        "orthophoto_support_complete": True,
+        "source_coverage_verified": False,
+    }
     index["overlap_audit"] = overlap_audit(directory, previous_directory)
     index["planning_hints"] = landmark_plan(config)
     index["frontier_priority"] = ["x3_y2", "x3_y1", "x3_y3"]
@@ -305,6 +344,11 @@ def main():
     finishing.add_argument(
         "--previous", type=Path, default=Path("renders/shinjuku-pilot-source-v1")
     )
+    finishing.add_argument(
+        "--coverage-audit",
+        type=Path,
+        default=Path(".cache/coverage/expansion-audit.json"),
+    )
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else sys.argv[1:]
     args = parser.parse_args(argv)
     if args.command == "render":
@@ -329,7 +373,7 @@ def main():
             },
         )
     else:
-        finalize(args.output, args.previous)
+        finalize(args.output, args.previous, args.coverage_audit)
         print("Finalized 25 native expansion cores with exact source continuity")
 
 

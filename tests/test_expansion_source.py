@@ -28,6 +28,7 @@ from render_expansion_source import (
     grid_plan,
     landmark_plan,
     validate_camera,
+    validate_support_audit,
 )
 from render_pilot_source import digest, finalize_partition, write_index
 
@@ -35,6 +36,50 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ExpansionSourceTests(unittest.TestCase):
+    def test_support_audit_is_bound_to_rendered_inputs(self):
+        index = {
+            "source_config_sha256": "config",
+            "geometry": {"mesh_count": 259},
+            "provenance": {
+                "input_sha256": {
+                    "building-manifest": "building",
+                    "terrain-mesh": "terrain",
+                    "ground-manifest": "ground",
+                }
+            },
+        }
+        audit = {
+            "config_sha256": "config",
+            "building_manifest_sha256": "building",
+            "tile_selection_complete": True,
+            "required_tiles": 259,
+            "present_tiles": 259,
+            "missing_tiles": 0,
+            "metadata_mismatch_urls": [],
+            "extra_tiles": 0,
+            "terrain": {
+                "mesh_sha256": "terrain",
+                "terrain_surface_support_complete": True,
+                "receiver_height_range_verified": True,
+            },
+            "orthophoto": {
+                "manifest_sha256": "ground",
+                "orthophoto_support_complete": True,
+            },
+        }
+        validate_support_audit(index, audit)
+        for key, value in (
+            ("config_sha256", "old-config"),
+            ("tile_selection_complete", False),
+            ("required_tiles", 138),
+            ("building_manifest_sha256", "wrong"),
+            ("missing_tiles", 1),
+        ):
+            changed = copy.deepcopy(audit)
+            changed[key] = value
+            with self.assertRaises(ValueError):
+                validate_support_audit(index, changed)
+
     def test_feature_overlap_keys_ignore_release_local_numeric_ids(self):
         first = {"id": 12, "kind": "building", "gml_id": "building-one"}
         second = {**first, "id": 32000}
