@@ -150,6 +150,25 @@ class ExpansionSourceTests(unittest.TestCase):
             write_index(directory, index, INDEX)
             result = finalize_partition(directory, grid_plan(4, 2), index_name=INDEX)
             self.assertTrue(result["core_reassembly_pixel_exact"])
+            pending = finalize_partition(
+                directory,
+                grid_plan(4, 2),
+                index_name=INDEX,
+                finalized_status="partitioned",
+            )
+            self.assertEqual(pending["status"], "partitioned")
+            self.assertEqual(
+                json.loads((directory / INDEX).read_text())["status"], "partitioned"
+            )
+            self.assertEqual(
+                finalize_partition(
+                    directory,
+                    grid_plan(4, 2),
+                    index_name=INDEX,
+                    finalized_status="partitioned",
+                )["status"],
+                "partitioned",
+            )
             for chunk in result["chunks"]:
                 with Image.open(
                     directory / chunk["assets"]["source-reference"]["core"]["path"]

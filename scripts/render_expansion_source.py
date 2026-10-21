@@ -298,7 +298,9 @@ def finalize(
     validate_support_audit(index, audit)
     support_path = directory / "source-support.json"
     support_path.write_text(json.dumps(audit, indent=2, allow_nan=False) + "\n")
-    index = finalize_partition(directory, grid_plan(), index_name=INDEX)
+    index = finalize_partition(
+        directory, grid_plan(), index_name=INDEX, finalized_status="partitioned"
+    )
     index["source_support"] = {
         "path": support_path.name,
         "sha256": digest(support_path),
@@ -310,6 +312,7 @@ def finalize(
     index["overlap_audit"] = overlap_audit(directory, previous_directory)
     index["planning_hints"] = landmark_plan(config)
     index["frontier_priority"] = ["x3_y2", "x3_y1", "x3_y3"]
+    index["status"] = "complete"
     write_index(directory, index, INDEX)
     return index
 

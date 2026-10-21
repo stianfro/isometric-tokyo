@@ -296,14 +296,18 @@ def finalize(directory):
     return finalize_partition(directory, expected)
 
 
-def finalize_partition(directory, expected, *, index_name=INDEX):
+def finalize_partition(
+    directory, expected, *, index_name=INDEX, finalized_status="complete"
+):
     """Losslessly partition checked frames, retaining their numeric guide encodings."""
     from PIL import Image
     from render_geometry import relative_asset
 
+    if finalized_status not in ("complete", "partitioned"):
+        raise ValueError("Unsupported native source finalization status")
     index = json.loads((directory / index_name).read_text())
     if (
-        index.get("status") not in ("rendered", "complete")
+        index.get("status") not in ("rendered", "complete", finalized_status)
         or index.get("upscaled") is not False
     ):
         raise ValueError("Expected a completed native render")
@@ -416,7 +420,7 @@ def finalize_partition(directory, expected, *, index_name=INDEX):
                 }
         else:
             raise ValueError("Unsupported guide asset")
-    index["status"] = "complete"
+    index["status"] = finalized_status
     index["core_reassembly_pixel_exact"] = True
     index["context_rule"] = (
         "256 pixel context clipped at native image edges, no invented padding"
