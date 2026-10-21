@@ -97,7 +97,7 @@ export function parseManifest(input: unknown): AtlasManifest {
   if (west < -180 || east > 180 || south < -90 || north > 90 || west >= east || south >= north) throw new Error('Invalid coverage bounds')
   if (!['webp', 'png', 'jpg'].includes(String(data.format))) throw new Error('Unsupported tile format')
   if (typeof data.ai_styling !== 'boolean') throw new Error('Missing style provenance')
-  if (data.comparison_mode !== undefined && !['shared-framing-unverified', 'reviewed-approximate'].includes(String(data.comparison_mode))) throw new Error('Invalid comparison mode')
+  if (data.comparison_mode !== undefined && (typeof data.comparison_mode !== 'string' || !['shared-framing-unverified', 'reviewed-approximate'].includes(data.comparison_mode))) throw new Error('Invalid comparison mode')
   const tileSize = integer(data.tile_size, 16, 2048)
   const width = integer(data.width, 1, 100_000_000)
   const height = integer(data.height, 1, 100_000_000)

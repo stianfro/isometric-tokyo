@@ -125,6 +125,8 @@ describe('bounded AI comparison metadata', () => {
     for (const comparison_mode of ['shared-framing-unverified', 'reviewed-approximate']) {
       expect(parseManifest({ ...fixture, comparison_mode }).comparison_mode).toBe(comparison_mode)
     }
-    expect(() => parseManifest({ ...fixture, comparison_mode: 'pixel-perfect' })).toThrow('Invalid comparison mode')
+    for (const comparison_mode of ['pixel-perfect', ['shared-framing-unverified'], null, true]) {
+      expect(() => parseManifest({ ...fixture, comparison_mode })).toThrow('Invalid comparison mode')
+    }
   })
 })
