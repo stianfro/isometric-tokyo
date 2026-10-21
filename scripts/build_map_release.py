@@ -1,4 +1,4 @@
-"""Publish a bounded nine-patch AI study with native-pixel and seam evidence.
+"""Publish bounded native AI maps with immutable parent and seam evidence.
 
 Matching pixel frames are not proof of geographic registration. The exporter
 checks exact native crops and ordered repair overwrites, never visual fidelity.
@@ -7,6 +7,7 @@ checks exact native crops and ordered repair overwrites, never visual fidelity.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import math
@@ -26,10 +27,12 @@ VERSION = 1
 SIZE = 3072
 CORE = 1024
 MAX_BYTES = 512 * 1024 * 1024
-MAX_IMAGE_PIXELS = 16_000_000
+MAX_IMAGE_PIXELS = 32_000_000
 MAX_REPAIRS = 32
 HASH = re.compile(r"[a-f0-9]{64}")
 ID = re.compile(r"shinjuku-map-[a-f0-9]{24}")
+EXPANSION_BOUNDS = (-1024, -1024, 4096, 4096)
+LEGACY_BOUNDS = (0, 0, SIZE, SIZE)
 ROOT = Path(__file__).resolve().parents[1]
 JOINS = {f"v{x}-r{y}" for x in (1, 2) for y in range(3)} | {
     f"h{y}-c{x}" for y in (1, 2) for x in range(3)
@@ -49,6 +52,82 @@ PUBLIC_INPUTS = {
         )
     },
 }
+
+
+def public_inputs(evidence):
+    """Choose only the explicitly attributed database for this source edition."""
+    if evidence["schema_version"] == 1:
+        return PUBLIC_INPUTS
+    return {
+        name.replace(
+            "datasets/shinjuku-vegetation/", "datasets/shinjuku-expansion-vegetation/"
+        ): target
+        for name, target in PUBLIC_INPUTS.items()
+    }
+
+
+def validate_source_provenance(value):
+    if not isinstance(value, dict) or set(value) != {"building_sources", "vegetation"}:
+        raise ValueError("Expansion source provenance is required")
+    sources, vegetation = value["building_sources"], value["vegetation"]
+    if not isinstance(sources, list) or not 1 <= len(sources) <= 8:
+        raise ValueError("Expected bounded actual building source editions")
+    for item in sources:
+        if not isinstance(item, dict) or set(item) != {"label", "url"}:
+            raise ValueError("Building source attribution requires label and URL")
+        text(item["label"], 500)
+        url = text(item["url"], 500)
+        if not re.fullmatch(
+            r"https://www\.geospatial\.jp/ckan/dataset/[a-z0-9-]+", url
+        ):
+            raise ValueError("Expected an official PLATEAU source dataset URL")
+    if len({item["url"] for item in sources}) != len(sources):
+        raise ValueError("Duplicate building dataset attribution")
+    if not isinstance(vegetation, dict) or set(vegetation) != {
+        "snapshot_range",
+        "public_data_sha256",
+    }:
+        raise ValueError(
+            "Vegetation provenance requires snapshot and adapted database hash"
+        )
+    snapshot_range, checksum = (
+        vegetation["snapshot_range"],
+        vegetation["public_data_sha256"],
+    )
+    if (
+        not isinstance(snapshot_range, list)
+        or len(snapshot_range) != 2
+        or any(
+            not isinstance(timestamp, str)
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", timestamp)
+            for timestamp in snapshot_range
+        )
+        or snapshot_range != sorted(snapshot_range)
+        or not isinstance(checksum, str)
+        or not HASH.fullmatch(checksum)
+    ):
+        raise ValueError("Invalid vegetation snapshot or adapted database hash")
+    return value
+
+
+def verify_expansion_database(path, evidence):
+    """Bind the public adapted database and displayed snapshot to the source receipt."""
+    if evidence["schema_version"] == 1:
+        return
+    provenance = validate_source_provenance(evidence["source_provenance"])["vegetation"]
+    if digest(path) != provenance["public_data_sha256"]:
+        raise ValueError(
+            "Expanded vegetation database differs from rendered source provenance"
+        )
+    with gzip.open(path, "rb") as stream:
+        raw = stream.read(64_000_001)
+    if len(raw) > 64_000_000:
+        raise ValueError("Expanded vegetation database exceeds bounded decode size")
+    database = json.loads(raw, object_pairs_hook=unique_object)
+    if database.get("source", {}).get("snapshot_range") != provenance["snapshot_range"]:
+        raise ValueError(
+            "Displayed source snapshot differs from the actual vegetation database"
+        )
 
 
 def canonical(value):
@@ -148,7 +227,7 @@ def rectangle(value):
 def validate_config(config_path, index):
     config = load_config(config_path)
     if (
-        config.bounds_px != (0, 0, SIZE, SIZE)
+        config.bounds_px not in (LEGACY_BOUNDS, EXPANSION_BOUNDS)
         or config.chunk_size_px != CORE
         or config.pixel_origin != (SIZE / 2, SIZE / 2)
         or not math.isclose(
@@ -166,7 +245,49 @@ def validate_config(config_path, index):
     return config
 
 
-def validate_review(review):
+def review_regions(bounds=LEGACY_BOUNDS):
+    """Named global review regions, returned as canvas-local rectangles."""
+    x0, y0, x1, y1 = (n // CORE for n in bounds)
+    regions = {}
+    for x in range(x0 + 1, x1):
+        for y in range(y0, y1):
+            regions[f"v{x}-r{y}"] = [
+                x * CORE - 192,
+                y * CORE,
+                x * CORE + 192,
+                (y + 1) * CORE,
+            ]
+    for y in range(y0 + 1, y1):
+        for x in range(x0, x1):
+            regions[f"h{y}-c{x}"] = [
+                x * CORE,
+                y * CORE - 192,
+                (x + 1) * CORE,
+                y * CORE + 192,
+            ]
+    for x in range(x0 + 1, x1):
+        for y in range(y0 + 1, y1):
+            regions[f"x{x}-y{y}"] = [
+                x * CORE - 256,
+                y * CORE - 256,
+                x * CORE + 256,
+                y * CORE + 256,
+            ]
+    return {
+        name: [
+            box[0] - bounds[0],
+            box[1] - bounds[1],
+            box[2] - bounds[0],
+            box[3] - bounds[1],
+        ]
+        for name, box in regions.items()
+    }
+
+
+def validate_review(review, bounds=LEGACY_BOUNDS):
+    regions = review_regions(bounds)
+    joins = {name for name in regions if name.startswith(("v", "h"))}
+    junctions = set(regions) - joins
     if (
         not isinstance(review, dict)
         or set(review) != {"status", "joins", "junctions", "note", "binding"}
@@ -180,7 +301,7 @@ def validate_review(review):
         or set(binding)
         != {"atlas_rgb_sha256", "source_rgb_sha256", "regions_rgb_sha256"}
         or not isinstance(binding["regions_rgb_sha256"], dict)
-        or set(binding["regions_rgb_sha256"]) != JOINS | JUNCTIONS
+        or set(binding["regions_rgb_sha256"]) != joins | junctions
         or any(
             not isinstance(value, str) or not HASH.fullmatch(value)
             for value in (
@@ -191,10 +312,10 @@ def validate_review(review):
         )
     ):
         raise ValueError("Visual review requires complete RGB image bindings")
-    for field, expected in (("joins", JOINS), ("junctions", JUNCTIONS)):
+    for field, expected in (("joins", joins), ("junctions", junctions)):
         records = review[field]
         if not isinstance(records, list) or len(records) != len(expected):
-            raise ValueError("Visual review must cover all 12 joins and four junctions")
+            raise ValueError("Visual review must cover every join and junction")
         if any(
             not isinstance(record, dict)
             or set(record) != {"id", "passed", "note"}
@@ -219,44 +340,33 @@ def validate_source_comparison(review):
     text(review["note"])
 
 
-def review_binding(atlas, source):
-    """Bind visual decisions to exact row-major RGB pixels, not PNG encoding."""
+def rgb_digest(picture):
+    """Hash bounded row strips to avoid another full decoded-frame allocation."""
+    result = hashlib.sha256()
+    for top in range(0, picture.height, 128):
+        with picture.crop(
+            (0, top, picture.width, min(top + 128, picture.height))
+        ) as strip:
+            result.update(strip.tobytes())
+    return result.hexdigest()
+
+
+def review_binding(atlas, source, bounds=LEGACY_BOUNDS):
+    """Bind decisions to exact native RGB pixels and global-coordinate regions."""
+    size = (bounds[2] - bounds[0], bounds[3] - bounds[1])
     if any(
-        picture.mode != "RGB" or picture.size != (SIZE, SIZE)
-        for picture in (atlas, source)
+        picture.mode != "RGB" or picture.size != size for picture in (atlas, source)
     ):
-        raise ValueError("Review binding requires two native 3072-square RGB frames")
-    regions = {}
-    for line in (1, 2):
-        for segment in range(3):
-            p, start = line * CORE, segment * CORE
-            regions[f"v{line}-r{segment}"] = [
-                p - 192,
-                start,
-                p + 192,
-                start + CORE,
-            ]
-            regions[f"h{line}-c{segment}"] = [
-                start,
-                p - 192,
-                start + CORE,
-                p + 192,
-            ]
-    for x in (1, 2):
-        for y in (1, 2):
-            regions[f"x{x}-y{y}"] = [
-                x * CORE - 256,
-                y * CORE - 256,
-                x * CORE + 256,
-                y * CORE + 256,
-            ]
+        raise ValueError(
+            f"Review binding requires two native {size[0]}-square RGB frames"
+        )
     hashes = {}
-    for identifier, bounds in regions.items():
-        with atlas.crop(bounds) as region:
-            hashes[identifier] = hashlib.sha256(region.tobytes()).hexdigest()
+    for identifier, box in review_regions(bounds).items():
+        with atlas.crop(box) as region:
+            hashes[identifier] = rgb_digest(region)
     return {
-        "atlas_rgb_sha256": hashlib.sha256(atlas.tobytes()).hexdigest(),
-        "source_rgb_sha256": hashlib.sha256(source.tobytes()).hexdigest(),
+        "atlas_rgb_sha256": rgb_digest(atlas),
+        "source_rgb_sha256": rgb_digest(source),
         "regions_rgb_sha256": hashes,
     }
 
@@ -311,20 +421,163 @@ def generation(record, base, bounds):
         return path, source.crop(crop)
 
 
+def parent_proof(directory, ident):
+    """Verify a legacy release's retained native proof against its immutable ID.
+
+    Browsing pyramid assets need not be copied. Their original checksums remain
+    in the content-addressed identity, while every native proof file is retained.
+    Expansion parents are deliberately limited to one verified legacy pilot.
+    """
+    directory = Path(directory)
+    release = read_json(directory / "release.json")
+    if (
+        set(release) != {"schema_version", "id", "identity"}
+        or release["schema_version"] != 1
+        or release["id"] != ident
+        or not isinstance(ident, str)
+        or not ID.fullmatch(ident)
+        or release_id(release["identity"]) != ident
+    ):
+        raise ValueError("Parent immutable release identity mismatch")
+    identity = release["identity"]
+    if (
+        set(identity)
+        != {"exporter_version", "code", "tools", "input_index_sha256", "assets"}
+        or identity["exporter_version"] != 1
+    ):
+        raise ValueError("Invalid parent release identity schema")
+    evidence = read_json(directory / "evidence.json")
+    if evidence.get("schema_version") != 1:
+        raise ValueError("Expansion requires a legacy nine-patch parent")
+    _, index, evidence, files = validate_inputs(
+        directory / "source-index.json",
+        directory / "source-config.json",
+        directory / "evidence.json",
+    )
+    files.update(
+        {
+            name: directory / name
+            for name in (
+                "source-index.json",
+                "source-config.json",
+                "evidence.json",
+                *PUBLIC_INPUTS.values(),
+            )
+        }
+    )
+    inventory_records = release["identity"].get("assets")
+    if not isinstance(inventory_records, list):
+        raise ValueError("Parent release inventory is missing")
+    inventory_by_name = {record["path"]: record for record in inventory_records}
+    if len(inventory_by_name) != len(inventory_records):
+        raise ValueError("Parent release inventory has duplicate paths")
+    for name, path in files.items():
+        record = inventory_by_name.get(name)
+        if record != {
+            "path": name,
+            "bytes": path.stat().st_size,
+            "sha256": digest(path),
+        }:
+            raise ValueError("Parent native proof differs from its immutable release")
+    files["release.json"] = directory / "release.json"
+    return index, evidence, files
+
+
+def validate_expansion_parent(evidence, base):
+    parent = evidence["parent"]
+    if (
+        not isinstance(parent, dict)
+        or set(parent) != {"id", "release_path"}
+        or parent["release_path"] != "parent/release.json"
+    ):
+        raise ValueError("Expansion requires its bounded immutable parent proof")
+    index, original, files = parent_proof(safe_file(base, "parent"), parent["id"])
+    inherited = {record["id"]: record for record in original["patches"]}
+    patches = {record["id"]: record for record in evidence["patches"]}
+    for ident, previous in inherited.items():
+        actual = patches.get(ident)
+        expected = json.loads(json.dumps(previous))
+        expected["generation_output"]["path"] = (
+            "parent/" + expected["generation_output"]["path"]
+        )
+        if actual is None or {
+            key: value
+            for key, value in actual.items()
+            if key not in {"styled_sha256", "source_sha256"}
+        } != {
+            key: value
+            for key, value in expected.items()
+            if key not in {"styled_sha256", "source_sha256"}
+        }:
+            raise ValueError("Inherited generation provenance changed")
+    historical = json.loads(json.dumps(original["repairs"]))
+    for record in historical:
+        record["generation_output"]["path"] = (
+            "parent/" + record["generation_output"]["path"]
+        )
+    repairs = evidence["repairs"]
+    if repairs[: len(historical)] != historical or len(repairs) > len(historical) + 8:
+        raise ValueError(
+            "Expansion must preserve ordered parent repairs and at most eight new repairs"
+        )
+    for record in repairs[len(historical) :]:
+        window = rectangle(record["source_bounds_px"])
+        box = rectangle(record["bounds_px"])
+        if (
+            window[2] - window[0] != 1254
+            or window[3] - window[1] != 1254
+            or window[0] < -1024
+            or window[1] < -1024
+            or window[2] > 4096
+            or window[3] > 4096
+            or (box[2] - box[0]) * (box[3] - box[1]) > CORE * CORE
+        ):
+            raise ValueError(
+                "Expansion repairs require bounded native 1254 generation windows"
+            )
+    for record in evidence["patches"]:
+        if record["id"] not in inherited:
+            window = rectangle(record["source_bounds_px"])
+            if (
+                window[2] - window[0] != 1254
+                or window[3] - window[1] != 1254
+                or window[0] < -1024
+                or window[1] < -1024
+                or window[2] > 4096
+                or window[3] > 4096
+            ):
+                raise ValueError(
+                    "Expansion generation must use a native bounded 1254 window"
+                )
+    return {"parent/" + name: path for name, path in files.items()}
+
+
 def validate_inputs(index_path, config_path, evidence_path):
     read_json(index_path)  # Bound size and reject duplicate fields before parsing.
     index, chunks, _ = read_index(index_path)
     config = validate_config(config_path, index)
+    bounds = config.bounds_px
+    expanded = bounds == EXPANSION_BOUNDS
+    count = 25 if expanded else 9
+    dimensions = (bounds[2] - bounds[0], bounds[3] - bounds[1])
     if (
         index.get("ai_styling") is not True
-        or index["bounds_px"] != [0, 0, SIZE, SIZE]
+        or index["bounds_px"] != list(bounds)
         or index["chunk_size_px"] != CORE
         or index["layers"] != ["styled", "textured"]
-        or len(chunks) != 9
+        or len(chunks) != count
     ):
         raise ValueError(
-            "Expected nine AI-assisted styled/source chunks on the fixed study grid"
+            f"Expected {count} AI-assisted styled/source chunks on the fixed study grid"
         )
+    if expanded:
+        expected_cells = {
+            f"x{x}_y{y}": [x * CORE, y * CORE, (x + 1) * CORE, (y + 1) * CORE]
+            for x in range(-1, 4)
+            for y in range(-1, 4)
+        }
+        if {chunk["id"]: chunk["bounds_px"] for chunk in chunks} != expected_cells:
+            raise ValueError("Expansion requires exact signed global cell identities")
     evidence = read_json(evidence_path)
     fields = {
         "schema_version",
@@ -343,11 +596,13 @@ def validate_inputs(index_path, config_path, evidence_path):
         "seam_review",
         "source_comparison",
     }
+    if expanded:
+        fields.update({"parent", "source_provenance"})
     if (
         not isinstance(evidence, dict)
         or set(evidence) != fields
         or type(evidence["schema_version"]) is not int
-        or evidence["schema_version"] != VERSION
+        or evidence["schema_version"] != (2 if expanded else VERSION)
     ):
         raise ValueError("Invalid map evidence schema")
     if (
@@ -365,24 +620,28 @@ def validate_inputs(index_path, config_path, evidence_path):
         raise ValueError("AI imagery cannot claim exact geographic registration")
     for field in ("comparison_note", "generation_tool", "model_version", "prompt"):
         text(evidence[field], 700 if field == "comparison_note" else 8000)
-    validate_review(evidence["seam_review"])
+    validate_review(evidence["seam_review"], bounds)
     validate_source_comparison(evidence["source_comparison"])
     patches, repairs = evidence["patches"], evidence["repairs"]
     if (
         not isinstance(patches, list)
-        or len(patches) != 9
+        or len(patches) != count
         or not isinstance(repairs, list)
         or len(repairs) > MAX_REPAIRS
     ):
-        raise ValueError("Expected nine main patches and at most 32 repairs")
+        raise ValueError(f"Expected {count} main patches and at most 32 repairs")
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
     if any(not isinstance(record, dict) for record in patches) or {
         record.get("id") for record in patches
     } != set(chunk_by_id):
         raise ValueError("Generation patches must match all source chunks exactly")
+    parent_sources = {}
+    if expanded:
+        validate_source_provenance(evidence["source_provenance"])
+        parent_sources = validate_expansion_parent(evidence, evidence_path.parent)
     normalized = json.loads(json.dumps(evidence))
     outputs = {}
-    sources = {}
+    sources = dict(parent_sources)
     hashes = set()
     try:
         for record, public in zip(patches, normalized["patches"], strict=True):
@@ -408,9 +667,18 @@ def validate_inputs(index_path, config_path, evidence_path):
             path, pixels = generation(record, evidence_path.parent, chunk["bounds_px"])
             outputs[record["id"]] = pixels
             if record["generation_output"]["sha256"] in hashes:
-                raise ValueError("Nine distinct native generation outputs are required")
+                raise ValueError(
+                    "All patches require distinct native generation outputs"
+                )
             hashes.add(record["generation_output"]["sha256"])
-            name = f"generation/{record['id']}.png"
+            inherited = expanded and record["generation_output"]["path"].startswith(
+                "parent/"
+            )
+            name = (
+                record["generation_output"]["path"]
+                if inherited
+                else f"generation/{record['id']}.png"
+            )
             sources[name] = path
             public["generation_output"]["path"] = name
         repair_ids = set()
@@ -436,24 +704,26 @@ def validate_inputs(index_path, config_path, evidence_path):
             if "prompt" in record:
                 text(record["prompt"])
             repair_ids.add(record["id"])
-            bounds = rectangle(record["bounds_px"])
+            repair_bounds = rectangle(record["bounds_px"])
             if (
-                bounds[0] < 0
-                or bounds[1] < 0
-                or bounds[2] > SIZE
-                or bounds[3] > SIZE
-                or (bounds[2] - bounds[0]) * (bounds[3] - bounds[1]) > 4_000_000
+                repair_bounds[0] < bounds[0]
+                or repair_bounds[1] < bounds[1]
+                or repair_bounds[2] > bounds[2]
+                or repair_bounds[3] > bounds[3]
+                or (repair_bounds[2] - repair_bounds[0])
+                * (repair_bounds[3] - repair_bounds[1])
+                > 4_000_000
             ):
                 raise ValueError("Repair rectangle is outside the bounded atlas")
-            path, pixels = generation(record, evidence_path.parent, bounds)
+            path, pixels = generation(record, evidence_path.parent, repair_bounds)
             try:
                 for chunk in chunks:
                     core = chunk["bounds_px"]
                     intersection = [
-                        max(core[0], bounds[0]),
-                        max(core[1], bounds[1]),
-                        min(core[2], bounds[2]),
-                        min(core[3], bounds[3]),
+                        max(core[0], repair_bounds[0]),
+                        max(core[1], repair_bounds[1]),
+                        min(core[2], repair_bounds[2]),
+                        min(core[3], repair_bounds[3]),
                     ]
                     if (
                         intersection[0] < intersection[2]
@@ -461,10 +731,10 @@ def validate_inputs(index_path, config_path, evidence_path):
                     ):
                         crop = pixels.crop(
                             (
-                                intersection[0] - bounds[0],
-                                intersection[1] - bounds[1],
-                                intersection[2] - bounds[0],
-                                intersection[3] - bounds[1],
+                                intersection[0] - repair_bounds[0],
+                                intersection[1] - repair_bounds[1],
+                                intersection[2] - repair_bounds[0],
+                                intersection[3] - repair_bounds[1],
                             )
                         )
                         outputs[chunk["id"]].paste(
@@ -473,12 +743,19 @@ def validate_inputs(index_path, config_path, evidence_path):
                         crop.close()
             finally:
                 pixels.close()
-            name = f"generation/repair-{position:02}-{record['id']}.png"
+            inherited = expanded and record["generation_output"]["path"].startswith(
+                "parent/"
+            )
+            name = (
+                record["generation_output"]["path"]
+                if inherited
+                else f"generation/repair-{position:02}-{record['id']}.png"
+            )
             sources[name] = path
             public["generation_output"]["path"] = name
         with (
-            Image.new("RGB", (SIZE, SIZE)) as atlas,
-            Image.new("RGB", (SIZE, SIZE)) as source,
+            Image.new("RGB", dimensions) as atlas,
+            Image.new("RGB", dimensions) as source,
         ):
             for chunk in chunks:
                 for layer in index["layers"]:
@@ -492,9 +769,17 @@ def validate_inputs(index_path, config_path, evidence_path):
                                 "Final artwork differs from native crops and ordered exact repairs"
                             )
                         target = atlas if layer == "styled" else source
-                        target.paste(pixels, tuple(chunk["bounds_px"][:2]))
+                        target.paste(
+                            pixels,
+                            (
+                                chunk["bounds_px"][0] - bounds[0],
+                                chunk["bounds_px"][1] - bounds[1],
+                            ),
+                        )
                     sources[f"chunks/{chunk['id']}/{layer}.png"] = path
-            if evidence["seam_review"]["binding"] != review_binding(atlas, source):
+            if evidence["seam_review"]["binding"] != review_binding(
+                atlas, source, bounds
+            ):
                 raise ValueError("Visual review RGB bindings do not match final pixels")
     finally:
         for pixels in outputs.values():
@@ -532,14 +817,44 @@ def validate_inputs(index_path, config_path, evidence_path):
 
 
 def metadata(config, evidence, notice):
+    expanded = evidence["schema_version"] == 2
+    provenance = (
+        validate_source_provenance(evidence["source_provenance"]) if expanded else None
+    )
+    credits = (
+        (
+            provenance["building_sources"]
+            + ATTRIBUTION[3:-1]
+            + [
+                {
+                    "label": "Adapted expansion vegetation database and terms",
+                    "url": "https://github.com/stianfro/isometric-tokyo/tree/main/datasets/shinjuku-expansion-vegetation",
+                }
+            ]
+        )
+        if expanded
+        else ATTRIBUTION
+    )
+    edition = (
+        (
+            "PLATEAU FY2025 building sources listed in attribution; PLATEAU-Ortho 2023; OSM snapshots "
+            + " to ".join(provenance["vegetation"]["snapshot_range"])
+        )
+        if expanded
+        else "Shinjuku, Shibuya and Nakano FY2025; PLATEAU-Ortho 2023; OSM 2026-10-21"
+    )
     return {
         "title": "Shinjuku, Pixel city native study",
         "place": {"name": "Shinjuku", "name_ja": "新宿"},
-        "source_edition": "Shinjuku, Shibuya and Nakano FY2025; PLATEAU-Ortho 2023; OSM 2026-10-21",
+        "source_edition": edition,
         "ai_styling": True,
-        "attribution": ATTRIBUTION,
+        "attribution": credits,
         "coverage": {
-            "label": "Western Shinjuku nine-patch study. Bounds describe the original central selection, not the full rendered view or completed district coverage.",
+            "label": (
+                "Shinjuku 25-patch expansion. Geographic bounds describe source acquisition, not surveyed artwork accuracy or complete district coverage."
+                if evidence["schema_version"] == 2
+                else "Western Shinjuku nine-patch study. Bounds describe the original central selection, not the full rendered view or completed district coverage."
+            ),
             "bbox": list(config.source_bounds_wsen),
         },
         "modifications": "AI-assisted native patch generation, direct integer crops and recorded exact repair overwrites. Source textures retain their separate unstyled pixels. Independent project, no endorsement.",
@@ -570,6 +885,14 @@ def public_manifest(directory, ident):
             "provenance": f"releases/{ident}/evidence.json",
         }
     )
+    if evidence["schema_version"] == 2:
+        manifest.update(
+            {
+                "coordinate_frame": {"id": "shinjuku-native-v1", "units": "pixels"},
+                "legacy_view_bounds": [0, 0, SIZE, SIZE],
+                "home_bounds": [0, 0, SIZE, SIZE],
+            }
+        )
     return manifest
 
 
@@ -657,6 +980,7 @@ def verify_version(directory, ident):
         "query.overpassql",
     }:
         raise ValueError("Vegetation checksum inventory is incomplete")
+    verify_expansion_database(directory / "data/vegetation.json.gz", evidence)
     pyramid = verify_pyramid(directory / "pyramid")
     pyramid_index = read_json(directory / "pyramid/pyramid-index.json")
     verify_pyramid_sources(pyramid_index, index)
@@ -667,8 +991,8 @@ def verify_version(directory, ident):
         raise ValueError("Pyramid provenance differs from release evidence")
     manifest = public_manifest(directory, ident)
     if (
-        manifest["width"] != SIZE
-        or manifest["height"] != SIZE
+        manifest["width"] != config.bounds_px[2] - config.bounds_px[0]
+        or manifest["height"] != config.bounds_px[3] - config.bounds_px[1]
         or manifest["artwork_approved"] is not False
         or manifest["source_coverage_verified"] is not False
     ):
@@ -704,9 +1028,10 @@ def build_release(index_path, config_path, evidence_path, output, repo_root=ROOT
     sources.update(
         {
             destination: safe_file(repo_root, source)
-            for source, destination in PUBLIC_INPUTS.items()
+            for source, destination in public_inputs(evidence).items()
         }
     )
+    verify_expansion_database(sources["data/vegetation.json.gz"], evidence)
     initial = {
         str(path): digest(path)
         for path in [index_path, config_path, evidence_path, *sources.values()]

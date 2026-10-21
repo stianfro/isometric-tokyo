@@ -727,10 +727,13 @@ def main():
     init.add_argument("--source", type=Path, required=True)
     init.add_argument("--structure", type=Path, required=True)
     init.add_argument("--style", type=Path, required=True)
+    expansion = commands.add_parser("expansion-init")
+    for option in ("source", "structure", "style", "parent-release", "order"):
+        expansion.add_argument("--" + option, type=Path, required=True)
     prepare_parser = commands.add_parser("prepare")
-    prepare_parser.add_argument("--id", choices=ORDER, required=True)
+    prepare_parser.add_argument("--id", required=True)
     ingest_parser = commands.add_parser("ingest")
-    ingest_parser.add_argument("--id", choices=ORDER, required=True)
+    ingest_parser.add_argument("--id", required=True)
     ingest_parser.add_argument("--image", type=Path, required=True)
     ingest_parser.add_argument("--prompt", type=Path, required=True)
     assemble_parser = commands.add_parser("assemble")
@@ -749,6 +752,7 @@ def main():
     repair_ingest.add_argument("--prompt", type=Path, required=True)
     for child in (
         init,
+        expansion,
         prepare_parser,
         ingest_parser,
         assemble_parser,
@@ -759,6 +763,67 @@ def main():
     ):
         child.add_argument("--directory", type=Path, required=True)
     args = parser.parse_args()
+    if args.command == "expansion-init":
+        from art_expansion import initialize as expansion_initialize
+
+        result = expansion_initialize(
+            args.directory,
+            args.source,
+            args.structure,
+            args.style,
+            args.parent_release,
+            json.loads(args.order.read_text()),
+        )
+        print(json.dumps(result, indent=2))
+        return
+    if (
+        args.command != "init"
+        and json.loads((args.directory / "plan.json").read_text()).get("schema_version")
+        == 2
+    ):
+        import art_expansion
+
+        functions = (
+            {"prepare": (art_expansion.prepare, (args.directory, args.id))}
+            if args.command == "prepare"
+            else {}
+        )
+        if args.command == "ingest":
+            functions[args.command] = (
+                art_expansion.ingest,
+                (args.directory, args.id, args.image, args.prompt),
+            )
+        elif args.command == "assemble":
+            functions[args.command] = (
+                art_expansion.assemble,
+                (args.directory, args.allow_partial),
+            )
+        elif args.command == "review-template":
+            functions[args.command] = (art_expansion.review_template, (args.directory,))
+        elif args.command == "repair-prepare":
+            functions[args.command] = (
+                art_expansion.prepare_repair,
+                (args.directory, args.id, args.bounds, args.window),
+            )
+        elif args.command == "repair-ingest":
+            functions[args.command] = (
+                art_expansion.ingest_repair,
+                (args.directory, args.id, args.image, args.prompt),
+            )
+        elif args.command == "export":
+            functions[args.command] = (
+                art_expansion.export,
+                (
+                    args.directory,
+                    args.config,
+                    args.source_metadata,
+                    args.review,
+                    args.prompt,
+                ),
+            )
+        function, arguments = functions[args.command]
+        print(json.dumps(function(*arguments), indent=2))
+        return
     if args.command == "init":
         result = initialize(args.directory, args.source, args.structure, args.style)
     elif args.command == "prepare":
