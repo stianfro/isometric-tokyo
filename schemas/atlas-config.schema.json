@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://isometric.tokyo/schemas/atlas-config.schema.json",
+  "title": "Fixed-view Tokyo atlas configuration v1",
+  "description": "Pixel coordinates are half-open image-edge coordinates. Run the atlas validator for cross-field and finite-value checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "atlas_id", "release_id", "origin_lonlat",
+    "camera_target_enu", "camera_offset_enu", "pixel_origin", "pixels_per_metre",
+    "bounds_px", "source_bounds_wsen", "chunk_size_px", "overscan_px",
+    "vertical_range_enu_m", "shadow_buffer_m", "render_samples", "render_seed"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "atlas_id": {"$ref": "#/$defs/identifier"},
+    "release_id": {"$ref": "#/$defs/identifier"},
+    "origin_lonlat": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "prefixItems": [
+        {"type": "number", "minimum": -180, "maximum": 180},
+        {"type": "number", "exclusiveMinimum": -90, "exclusiveMaximum": 90}
+      ]
+    },
+    "camera_target_enu": {"$ref": "#/$defs/localPoint"},
+    "camera_offset_enu": {
+      "description": "Offset from target to camera, requiring positive up and a nonzero horizontal component.",
+      "$ref": "#/$defs/localPoint"
+    },
+    "pixel_origin": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {"type": "number", "minimum": -2147483647, "maximum": 2147483647}
+    },
+    "pixels_per_metre": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000},
+    "bounds_px": {
+      "description": "Nonempty [left, top, right, bottom] with exclusive right and bottom.",
+      "type": "array", "minItems": 4, "maxItems": 4,
+      "items": {"type": "integer", "minimum": -2147483647, "maximum": 2147483647}
+    },
+    "source_bounds_wsen": {
+      "description": "Downloaded source coverage, not a claim that the full camera footprint is covered.",
+      "type": "array", "minItems": 4, "maxItems": 4,
+      "prefixItems": [
+        {"type": "number", "minimum": -180, "maximum": 180},
+        {"type": "number", "exclusiveMinimum": -90, "exclusiveMaximum": 90},
+        {"type": "number", "minimum": -180, "maximum": 180},
+        {"type": "number", "exclusiveMinimum": -90, "exclusiveMaximum": 90}
+      ]
+    },
+    "chunk_size_px": {"type": "integer", "minimum": 1, "maximum": 16384},
+    "overscan_px": {"type": "integer", "minimum": 0, "maximum": 16384},
+    "vertical_range_enu_m": {
+      "description": "Increasing [minimum, maximum] ENU up, checked against loaded geometry before rendering.",
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {"type": "number", "minimum": -10000, "maximum": 100000}
+    },
+    "shadow_buffer_m": {"type": "number", "minimum": 0, "maximum": 100000},
+    "render_samples": {"type": "integer", "minimum": 1, "maximum": 1000000},
+    "render_seed": {"type": "integer", "minimum": 0, "maximum": 2147483647}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,95}$"},
+    "localPoint": {
+      "type": "array", "minItems": 3, "maxItems": 3,
+      "items": {"type": "number", "minimum": -10000000, "maximum": 10000000}
+    }
+  }
+}

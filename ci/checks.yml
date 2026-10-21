@@ -1,0 +1,49 @@
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-and-viewer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHON: .venv/bin/python
+      UV_CACHE_DIR: .cache/uv
+      UV_TOOL_DIR: .cache/uv-tools
+      PLAYWRIGHT_BROWSERS_PATH: ../.cache/playwright
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '26'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: '0.11.24'
+          enable-cache: false
+      - uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3
+        with:
+          just-version: '1.54.0'
+      - name: Install development dependencies
+        run: just bootstrap
+      - name: Lint and unit tests
+        run: just check
+      - name: Build and verify the source atlas
+        run: just viewer-build verify-atlas
+      - name: Install browser test dependencies
+        run: just viewer-browsers-ci
+      - name: Desktop and mobile browser tests
+        run: just viewer-e2e

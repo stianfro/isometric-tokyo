@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "edition": 2025,
+  "wards": [
+    {
+      "code": "13101",
+      "name_ja": "千代田区",
+      "name_en": "Chiyoda"
+    },
+    {
+      "code": "13102",
+      "name_ja": "中央区",
+      "name_en": "Chuo"
+    },
+    {
+      "code": "13103",
+      "name_ja": "港区",
+      "name_en": "Minato"
+    },
+    {
+      "code": "13104",
+      "name_ja": "新宿区",
+      "name_en": "Shinjuku"
+    },
+    {
+      "code": "13105",
+      "name_ja": "文京区",
+      "name_en": "Bunkyo"
+    },
+    {
+      "code": "13106",
+      "name_ja": "台東区",
+      "name_en": "Taito"
+    },
+    {
+      "code": "13107",
+      "name_ja": "墨田区",
+      "name_en": "Sumida"
+    },
+    {
+      "code": "13108",
+      "name_ja": "江東区",
+      "name_en": "Koto"
+    },
+    {
+      "code": "13109",
+      "name_ja": "品川区",
+      "name_en": "Shinagawa"
+    },
+    {
+      "code": "13110",
+      "name_ja": "目黒区",
+      "name_en": "Meguro"
+    },
+    {
+      "code": "13111",
+      "name_ja": "大田区",
+      "name_en": "Ota"
+    },
+    {
+      "code": "13112",
+      "name_ja": "世田谷区",
+      "name_en": "Setagaya"
+    },
+    {
+      "code": "13113",
+      "name_ja": "渋谷区",
+      "name_en": "Shibuya"
+    },
+    {
+      "code": "13114",
+      "name_ja": "中野区",
+      "name_en": "Nakano"
+    },
+    {
+      "code": "13115",
+      "name_ja": "杉並区",
+      "name_en": "Suginami"
+    },
+    {
+      "code": "13116",
+      "name_ja": "豊島区",
+      "name_en": "Toshima"
+    },
+    {
+      "code": "13117",
+      "name_ja": "北区",
+      "name_en": "Kita"
+    },
+    {
+      "code": "13118",
+      "name_ja": "荒川区",
+      "name_en": "Arakawa"
+    },
+    {
+      "code": "13119",
+      "name_ja": "板橋区",
+      "name_en": "Itabashi"
+    },
+    {
+      "code": "13120",
+      "name_ja": "練馬区",
+      "name_en": "Nerima"
+    },
+    {
+      "code": "13121",
+      "name_ja": "足立区",
+      "name_en": "Adachi"
+    },
+    {
+      "code": "13122",
+      "name_ja": "葛飾区",
+      "name_en": "Katsushika"
+    },
+    {
+      "code": "13123",
+      "name_ja": "江戸川区",
+      "name_en": "Edogawa"
+    }
+  ]
+}

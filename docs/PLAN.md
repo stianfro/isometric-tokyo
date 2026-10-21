@@ -87,7 +87,10 @@ is copied. That licence does not establish permission to reuse every external
 asset or model involved in the reference. The live site also has controls absent
 from the inspected public app source, so it is not an exact ready-made template.
 
-## Starting point: what exists and what is missing
+## Starting point of this roadmap
+
+This section describes the original baseline. See [implementation status](PROGRESS.md)
+for completed work and remaining gates.
 
 **Implemented:** a roughly 800 × 800 metre Shinjuku sample; bounded PLATEAU
 building, orthophoto and terrain downloads; textured and geometry-only renders;
@@ -116,7 +119,8 @@ Current limitations that must be fixed rather than multiplied:
 ## Phases and release gates
 
 Every phase ends with a demonstrable result and recorded acceptance evidence.
-All phases below are planned, not completed. Timing and total cost depend on
+Implementation is tracked separately in [PROGRESS.md](PROGRESS.md); a working
+component does not by itself complete its entire phase. Timing and total cost depend on
 measurements from the district pilot; no citywide generation budget is assumed.
 
 | Phase | Demonstrable result | Depends on |

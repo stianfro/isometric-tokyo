@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "status": "unapproved-structural-studies",
+  "presets": [
+    {
+      "id": "paper",
+      "title": "Paper and slate",
+      "description": "Warm neutral ground, slate facades and pale roofs. A restrained print-like structural study.",
+      "facade": "#9baeb7",
+      "roof": "#e7dcc5",
+      "ground": "#d9d6cc",
+      "roof_normal_z_min": 0.65,
+      "sun_energy": 1.1,
+      "sun_angle_degrees": 6,
+      "world_strength": 0.55
+    },
+    {
+      "id": "mineral",
+      "title": "Cool mineral",
+      "description": "Cool neutral ground and blue-gray facades, with light mineral roofs. Geometry remains the guide, not new surface detail.",
+      "facade": "#718c96",
+      "roof": "#cbd4cf",
+      "ground": "#c3cbcb",
+      "roof_normal_z_min": 0.65,
+      "sun_energy": 1.2,
+      "sun_angle_degrees": 3,
+      "world_strength": 0.6
+    },
+    {
+      "id": "clay",
+      "title": "Warm clay",
+      "description": "Warm gray ground, muted clay facades and cream roofs. An alternate architectural palette, not a claim about actual building colors.",
+      "facade": "#b39a88",
+      "roof": "#e9ddc6",
+      "ground": "#cbc2b6",
+      "roof_normal_z_min": 0.65,
+      "sun_energy": 1.1,
+      "sun_angle_degrees": 9,
+      "world_strength": 0.65
+    }
+  ]
+}

@@ -36,5 +36,56 @@ class GeoTests(unittest.TestCase):
         self.assertGreater(local_point(139.6917, 35.69, 0, 139.6917, 35.6896)[1], 0)
 
 
+class InverseGeoTests(unittest.TestCase):
+    def test_ecef_roundtrip(self):
+        from geo import geodetic
+
+        for lon, lat, height in [
+            (139.6917, 35.6896, 356),
+            (0, 0, -40),
+            (-75, -40, 2100),
+            (12, 89.999, 5),
+        ]:
+            actual = geodetic(*ecef(lon, lat, height))
+            self.assertAlmostEqual(actual[0], lon, places=9)
+            self.assertAlmostEqual(actual[1], lat, places=9)
+            self.assertAlmostEqual(actual[2], height, places=6)
+
+    def test_local_roundtrip_across_tokyo(self):
+        from geo import local_to_geodetic
+
+        for lon, lat, height in [
+            (139.6917, 35.6896, 100),
+            (139.82, 35.72, 12),
+            (139.52, 35.57, 600),
+        ]:
+            local = local_point(lon, lat, height, 139.6917, 35.6896)
+            actual = local_to_geodetic(local, 139.6917, 35.6896)
+            for value, expected in zip(actual, (lon, lat, height), strict=True):
+                self.assertAlmostEqual(value, expected, places=6)
+
+    def test_poles_and_invalid_coordinates(self):
+        from geo import geodetic
+
+        self.assertAlmostEqual(geodetic(*ecef(0, 90, 125))[2], 125, places=6)
+        self.assertAlmostEqual(geodetic(*ecef(0, -90, 125))[1], -90)
+        for value in [(0, 0, 0), (float("nan"), 2, 3), (1, 2, float("inf"))]:
+            with self.assertRaises(ValueError):
+                geodetic(*value)
+
+    def test_web_mercator_uv_uses_nonlinear_latitude(self):
+        from geo import mercator_uv
+
+        bounds = (130, 30, 140, 60)
+        self.assertEqual(mercator_uv(130, 30, bounds), (0, 0))
+        self.assertEqual(mercator_uv(140, 60, bounds), (1, 1))
+        u, v = mercator_uv(135, 45, bounds)
+        self.assertEqual(u, 0.5)
+        self.assertLess(v, 0.45)
+        self.assertGreater(mercator_uv(141, 45, bounds)[0], 1)
+        with self.assertRaises(ValueError):
+            mercator_uv(135, 45, (140, 30, 130, 60))
+
+
 if __name__ == "__main__":
     unittest.main()

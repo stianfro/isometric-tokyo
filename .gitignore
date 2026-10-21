@@ -18,3 +18,10 @@ __pycache__/
 *.blend1
 render-log.txt
 
+node_modules/
+viewer/dist/
+viewer/public/atlas/
+viewer/playwright-report/
+viewer/test-results/
+
+/data

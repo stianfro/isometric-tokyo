@@ -1,13 +1,15 @@
 """Render downloaded PLATEAU building tiles in Blender, without AI treatment."""
 
 import argparse
+import hashlib
 import json
 import math
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from geo import local_point, tile_matrix
+from geo import local_point, local_to_geodetic, mercator_uv, tile_matrix
 from gltf_compat import remove_external_rtc
 
 
@@ -33,8 +35,13 @@ def import_tiles(manifest_path, data, lon, lat):
     identity = [int(r == c) for c in range(4) for r in range(4)]
     for tile in data["tiles"]:
         path = manifest_path.parent / tile["glb_path"]
-        compatible_path = cache / path.name
-        compatible_path.write_bytes(remove_external_rtc(path.read_bytes()))
+        payload = remove_external_rtc(path.read_bytes())
+        compatible_path = cache / (hashlib.sha256(payload).hexdigest() + ".glb")
+        if not compatible_path.exists():
+            with tempfile.NamedTemporaryFile(dir=cache, delete=False) as handle:
+                handle.write(payload)
+                temporary_path = Path(handle.name)
+            temporary_path.replace(compatible_path)
         previous = set(bpy.data.objects)
         bpy.ops.import_scene.gltf(filepath=str(compatible_path.resolve()))
         objects = set(bpy.data.objects) - previous
@@ -52,6 +59,8 @@ def import_tiles(manifest_path, data, lon, lat):
         bpy.context.view_layer.update()
         for obj in objects:
             if obj.type == "MESH":
+                obj["source_tile_content_sha256"] = hashlib.sha256(payload).hexdigest()
+                obj["source_building_ids_preserved"] = False
                 imported.append(obj)
         print("Imported", path.name, "meshes", len(imported), flush=True)
     return imported
@@ -121,7 +130,7 @@ def bake_and_crop(objects, bounds):
     }
 
 
-def ground_mesh(bounds, height, ground_path, terrain_path, lon, lat):
+def ground_mesh(bounds, height, ground_path, terrain_path, lon, lat, *, clip=True):
     import bpy
 
     xmin, ymin, xmax, ymax = bounds
@@ -146,7 +155,8 @@ def ground_mesh(bounds, height, ground_path, terrain_path, lon, lat):
     mesh.from_pydata(vertices, [], faces)
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.collection.objects.link(obj)
-    crop_objects([obj], bounds)
+    if clip:
+        crop_objects([obj], bounds)
     material = bpy.data.materials.new("Ground orthophoto")
     material.use_nodes = True
     shader = material.node_tree.nodes.get("Principled BSDF")
@@ -154,22 +164,29 @@ def ground_mesh(bounds, height, ground_path, terrain_path, lon, lat):
     shader.inputs["Base Color"].default_value = (0.55, 0.56, 0.55, 1)
     if ground_path and ground_path.exists():
         meta = json.loads(ground_path.read_text())
-        w, s, e, n = meta["bounds_wsen"]
-        sw, ne = local_point(w, s, 0, lon, lat), local_point(e, n, 0, lon, lat)
-        uvs = mesh.uv_layers.new(name="Source map coordinates")
+        uvs = mesh.uv_layers.new(name="Source Web Mercator coordinates")
         for loop in mesh.loops:
-            v = mesh.vertices[loop.vertex_index].co
-            uvs.data[loop.index].uv = (
-                (v.x - sw[0]) / (ne[0] - sw[0]),
-                (v.y - sw[1]) / (ne[1] - sw[1]),
+            vertex = mesh.vertices[loop.vertex_index].co
+            source_lon, source_lat, _ = local_to_geodetic(vertex, lon, lat)
+            uvs.data[loop.index].uv = mercator_uv(
+                source_lon, source_lat, meta["bounds_wsen"]
             )
-        image_path = ground_path.parent / "ground.png"
+        image_path = ground_path.parent / meta.get("image", "ground.png")
         tex = material.node_tree.nodes.new("ShaderNodeTexImage")
         tex.image = bpy.data.images.load(str(image_path.resolve()))
         tex.interpolation = "Linear"
-        material.node_tree.links.new(tex.outputs["Color"], shader.inputs["Base Color"])
+        tex.extension = "CLIP"
+        coverage = material.node_tree.nodes.new("ShaderNodeMixRGB")
+        coverage.name = "Neutral ground where orthophoto is unavailable"
+        coverage.blend_type = "MIX"
+        coverage.inputs[1].default_value = (0.55, 0.56, 0.55, 1)
+        material.node_tree.links.new(tex.outputs["Alpha"], coverage.inputs[0])
+        material.node_tree.links.new(tex.outputs["Color"], coverage.inputs[2])
         material.node_tree.links.new(
-            tex.outputs["Color"], shader.inputs["Emission Color"]
+            coverage.outputs["Color"], shader.inputs["Base Color"]
+        )
+        material.node_tree.links.new(
+            coverage.outputs["Color"], shader.inputs["Emission Color"]
         )
         shader.inputs["Emission Strength"].default_value = 0.25
     mesh.materials.append(material)
@@ -185,6 +202,9 @@ def setup_scene(args, ground_height):
     scene.cycles.device = "CPU"
     scene.cycles.samples = args.samples
     scene.cycles.use_denoising = False
+    scene.cycles.use_adaptive_sampling = False
+    scene.cycles.seed = 0
+    scene.cycles.use_animated_seed = False
     scene.render.resolution_x = args.resolution
     scene.render.resolution_y = args.resolution
     scene.render.resolution_percentage = 100

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="review-token" content="{{REVIEW_TOKEN}}" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Review desk | isometric.tokyo</title>
+  <link rel="stylesheet" href="/review.css" />
+  <script type="module" src="/review.js"></script>
+</head>
+<body>
+  <header class="desk-header"><a class="wordmark" href="/">isometric<span>.tokyo</span></a><span class="desk-label">REVIEW DESK</span><button id="refresh" type="button">Refresh jobs</button></header>
+  <div id="global-message" class="global-message" role="status" hidden></div>
+  <div id="global-error" class="global-error" role="alert" hidden></div>
+  <div class="desk-layout">
+    <aside class="queue" aria-label="Production jobs">
+      <div class="queue-heading"><h1>Job queue</h1><span id="total-count">0 jobs</span></div>
+      <label for="filter">State</label><select id="filter"><option value="all">All states</option></select>
+      <label for="search">Find a job</label><input id="search" type="search" placeholder="Area, kind or job ID" autocomplete="off" />
+      <div id="queue-summary" class="queue-summary" aria-live="polite">Loading jobs…</div>
+      <ol id="job-list" class="job-list"></ol>
+      <nav class="queue-pages" aria-label="Job queue pages"><button id="previous" type="button">Previous</button><span id="page-label"></span><button id="next" type="button">Next</button></nav>
+    </aside>
+    <main id="review-main" class="review-main">
+      <section id="empty" class="empty-state"><h2>Select a job to inspect.</h2><p>Compare recorded output, check its joins, then leave one review decision.</p></section>
+      <article id="job-detail" hidden>
+        <header class="job-header"><div><div id="job-kind" class="eyebrow"></div><h2 id="job-area"></h2><p id="job-id" class="job-id"></p></div><span id="job-state" class="state-badge"></span></header>
+        <p id="job-error" class="job-error" role="status" hidden></p>
+        <div class="inspection-toolbar"><span id="image-progress">No image artifacts</span><label for="zoom">Image zoom</label><select id="zoom"><option value="1">Fit width</option><option value="1.5">150%</option><option value="2">200%</option><option value="4">400%</option></select><label class="check-label"><input id="linked-pan" type="checkbox" checked /> Link pan</label></div>
+        <div id="comparison" class="comparison" aria-label="Artifact comparison">
+          <section class="comparison-panel"><label for="left-image">Left image</label><select id="left-image"></select><div id="left-stage" class="image-stage" role="region" aria-label="Left artifact image" tabindex="0" data-zoom="1"><p>Choose an image.</p></div><p id="left-caption" class="image-caption"></p></section>
+          <section class="comparison-panel"><label for="right-image">Right image</label><select id="right-image"></select><div id="right-stage" class="image-stage" role="region" aria-label="Right artifact image" tabindex="0" data-zoom="1"><p>Choose an image.</p></div><p id="right-caption" class="image-caption"></p></section>
+        </div>
+        <p id="no-images" class="review-hint" hidden>No previewable image artifacts are recorded. This job cannot be visually approved here.</p>
+        <details class="artifact-details"><summary>Recorded artifacts and checksums</summary><ul id="artifact-list"></ul></details>
+        <section class="decision" aria-labelledby="decision-heading"><div><span class="eyebrow">HUMAN REVIEW</span><h3 id="decision-heading">Record a decision</h3><p>Inspect source fidelity, geometry, cropping and adjacent joins. Linked pan compares image fractions, so the inputs must already be aligned.</p><p class="boundary-note">This records a pipeline-output decision, not approval of the Tokyo art direction. Neighbor seams still need a manual comparison unless a recorded seam check covers them.</p></div><div class="decision-form"><label for="note">Review note <span>(required to approve or reject)</span></label><textarea id="note" rows="4" maxlength="2000" placeholder="What did you inspect? Record defects or acceptance evidence."></textarea><p id="action-help" class="review-hint"></p><div class="decision-actions"><button id="approve" class="primary" type="button">Approve output</button><button id="reject" class="danger" type="button">Reject output</button><button id="retry" type="button">Queue retry</button></div><p id="action-error" class="job-error" role="alert" hidden></p></div></section>
+      </article>
+    </main>
+  </div>
+</body>
+</html>

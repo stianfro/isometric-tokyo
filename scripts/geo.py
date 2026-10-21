@@ -54,3 +54,66 @@ def tile_matrix(transform, rtc, lon, lat):
             + [dot(row, delta)]
         )
     return out + [[0.0, 0.0, 0.0, 1.0]]
+
+
+def geodetic(x, y, z):
+    """ECEF metres to WGS84 longitude, latitude and ellipsoidal height.
+
+    Iterating latitude avoids subtracting nearly equal large-coordinate values
+    in the local frame. The polar branch avoids dividing by cos(latitude).
+    """
+    if not all(math.isfinite(value) for value in (x, y, z)):
+        raise ValueError("ECEF coordinates must be finite")
+    a, e2 = 6378137.0, 6.69437999014e-3
+    p = math.hypot(x, y)
+    if p < 1e-9:
+        if abs(z) < 1e-9:
+            raise ValueError("Earth centre has no unique geodetic coordinates")
+        return (0.0, math.copysign(90.0, z), abs(z) - a * math.sqrt(1 - e2))
+    latitude = math.atan2(z, p * (1 - e2))
+    for _ in range(20):
+        n = a / math.sqrt(1 - e2 * math.sin(latitude) ** 2)
+        updated = math.atan2(z + e2 * n * math.sin(latitude), p)
+        if abs(updated - latitude) < 1e-14:
+            latitude = updated
+            break
+        latitude = updated
+    n = a / math.sqrt(1 - e2 * math.sin(latitude) ** 2)
+    height = (
+        p * math.cos(latitude)
+        + z * math.sin(latitude)
+        - n * (1 - e2 * math.sin(latitude) ** 2)
+    )
+    return math.degrees(math.atan2(y, x)), math.degrees(latitude), height
+
+
+def local_to_geodetic(point, origin_lon, origin_lat):
+    """Invert local_point using the transpose of the orthonormal ENU basis."""
+    rotation = enu_rotation(origin_lon, origin_lat)
+    origin = ecef(origin_lon, origin_lat)
+    world = [
+        origin[axis] + sum(rotation[row][axis] * point[row] for row in range(3))
+        for axis in range(3)
+    ]
+    return geodetic(*world)
+
+
+def mercator_uv(lon, lat, bounds_wsen):
+    """North-up orthophoto UVs, v=0 at south, from geographic coordinates.
+
+    Deliberately do not clamp out-of-bounds vertices: the material must not repeat
+    or stretch the last imagery pixel into places without source coverage.
+    """
+    west, south, east, north = bounds_wsen
+    if not all(math.isfinite(value) for value in (lon, lat, west, south, east, north)):
+        raise ValueError("Web Mercator coordinates must be finite")
+    if not (
+        -180 <= west < east <= 180 and -85.05112878 <= south < north <= 85.05112878
+    ):
+        raise ValueError("Expected nonempty non-wrapping Web Mercator bounds")
+    if not -85.05112878 <= lat <= 85.05112878:
+        raise ValueError("Latitude outside Web Mercator range")
+    y = math.asinh(math.tan(math.radians(lat)))
+    ys = math.asinh(math.tan(math.radians(south)))
+    yn = math.asinh(math.tan(math.radians(north)))
+    return (lon - west) / (east - west), (y - ys) / (yn - ys)
