@@ -746,6 +746,12 @@ def write_public_bundle(manifest, query, output):
     (output / "README.txt").write_text(
         "Use gzip to decompress vegetation.json.gz, a UTF-8 JSON source-vegetation manifest.\nfeatures retain mapped geometries and source identities. canopy_samples are the exact deterministic artistic placements used for rendering, distinct from mapped source features.\nThe source query and its raw response hash identify acquisition. No raw contributor account metadata is included.\nNOTICE.txt contains attribution and the data licence link. SHA256SUMS verifies every data/notice file.\n"
     )
+    if manifest.get("source", {}).get("component_sources"):
+        readme = output / "README.txt"
+        readme.write_text(
+            readme.read_text()
+            + "For multi-query expansion data, query.overpassql is an annotated bundle of independently executed queries, not one executable request. source.component_sources retains each accepted query, checksum and actual snapshot timestamp. source.snapshot_range records the accepted timestamp range. Strict duplicate feature version and geometry equality is required, but a guaranteed single-instant snapshot is not claimed. The retained source-response hash identifies the explicitly derived merged response, not a single upstream response.\n"
+        )
     (output / "SHA256SUMS").write_text(
         "".join(
             f"{digest(path.read_bytes())}  {path.name}\n"

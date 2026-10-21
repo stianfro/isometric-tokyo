@@ -1,0 +1,5 @@
+Use gzip to decompress vegetation.json.gz, a UTF-8 JSON source-vegetation manifest.
+features retain mapped geometries and source identities. canopy_samples are the exact deterministic artistic placements used for rendering, distinct from mapped source features.
+The source query and its raw response hash identify acquisition. No raw contributor account metadata is included.
+NOTICE.txt contains attribution and the data licence link. SHA256SUMS verifies every data/notice file.
+For multi-query expansion data, query.overpassql is an annotated bundle of independently executed queries, not one executable request. source.component_sources retains each accepted query, checksum and actual snapshot timestamp. source.snapshot_range records the accepted timestamp range. Strict duplicate feature version and geometry equality is required, but a guaranteed single-instant snapshot is not claimed. The retained source-response hash identifies the explicitly derived merged response, not a single upstream response.
