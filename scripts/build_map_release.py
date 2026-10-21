@@ -169,11 +169,28 @@ def validate_config(config_path, index):
 def validate_review(review):
     if (
         not isinstance(review, dict)
-        or set(review) != {"status", "joins", "junctions", "note"}
+        or set(review) != {"status", "joins", "junctions", "note", "binding"}
         or review["status"] != "reviewed"
     ):
         raise ValueError("Explicit completed visual seam review is required")
     text(review["note"])
+    binding = review["binding"]
+    if (
+        not isinstance(binding, dict)
+        or set(binding)
+        != {"atlas_rgb_sha256", "source_rgb_sha256", "regions_rgb_sha256"}
+        or not isinstance(binding["regions_rgb_sha256"], dict)
+        or set(binding["regions_rgb_sha256"]) != JOINS | JUNCTIONS
+        or any(
+            not isinstance(value, str) or not HASH.fullmatch(value)
+            for value in (
+                binding["atlas_rgb_sha256"],
+                binding["source_rgb_sha256"],
+                *binding["regions_rgb_sha256"].values(),
+            )
+        )
+    ):
+        raise ValueError("Visual review requires complete RGB image bindings")
     for field, expected in (("joins", JOINS), ("junctions", JUNCTIONS)):
         records = review[field]
         if not isinstance(records, list) or len(records) != len(expected):
@@ -189,6 +206,59 @@ def validate_review(review):
             raise ValueError("Seam review IDs are missing or repeated")
         for record in records:
             text(record["note"])
+
+
+def validate_source_comparison(review):
+    if (
+        not isinstance(review, dict)
+        or set(review) != {"status", "passed", "note"}
+        or review["status"] != "reviewed"
+        or review["passed"] is not True
+    ):
+        raise ValueError("Explicit passing source comparison review is required")
+    text(review["note"])
+
+
+def review_binding(atlas, source):
+    """Bind visual decisions to exact row-major RGB pixels, not PNG encoding."""
+    if any(
+        picture.mode != "RGB" or picture.size != (SIZE, SIZE)
+        for picture in (atlas, source)
+    ):
+        raise ValueError("Review binding requires two native 3072-square RGB frames")
+    regions = {}
+    for line in (1, 2):
+        for segment in range(3):
+            p, start = line * CORE, segment * CORE
+            regions[f"v{line}-r{segment}"] = [
+                p - 192,
+                start,
+                p + 192,
+                start + CORE,
+            ]
+            regions[f"h{line}-c{segment}"] = [
+                start,
+                p - 192,
+                start + CORE,
+                p + 192,
+            ]
+    for x in (1, 2):
+        for y in (1, 2):
+            regions[f"x{x}-y{y}"] = [
+                x * CORE - 256,
+                y * CORE - 256,
+                x * CORE + 256,
+                y * CORE + 256,
+            ]
+    hashes = {}
+    for identifier, bounds in regions.items():
+        with atlas.crop(bounds) as region:
+            hashes[identifier] = hashlib.sha256(region.tobytes()).hexdigest()
+    return {
+        "atlas_rgb_sha256": hashlib.sha256(atlas.tobytes()).hexdigest(),
+        "source_rgb_sha256": hashlib.sha256(source.tobytes()).hexdigest(),
+        "regions_rgb_sha256": hashes,
+    }
 
 
 def generation(record, base, bounds):
@@ -271,6 +341,7 @@ def validate_inputs(index_path, config_path, evidence_path):
         "patches",
         "repairs",
         "seam_review",
+        "source_comparison",
     }
     if (
         not isinstance(evidence, dict)
@@ -295,6 +366,7 @@ def validate_inputs(index_path, config_path, evidence_path):
     for field in ("comparison_note", "generation_tool", "model_version", "prompt"):
         text(evidence[field], 700 if field == "comparison_note" else 8000)
     validate_review(evidence["seam_review"])
+    validate_source_comparison(evidence["source_comparison"])
     patches, repairs = evidence["patches"], evidence["repairs"]
     if (
         not isinstance(patches, list)
@@ -404,18 +476,26 @@ def validate_inputs(index_path, config_path, evidence_path):
             name = f"generation/repair-{position:02}-{record['id']}.png"
             sources[name] = path
             public["generation_output"]["path"] = name
-        for chunk in chunks:
-            for layer in index["layers"]:
-                path = chunk["outputs"][layer]["path"]
-                with image(path) as pixels:
-                    if (
-                        layer == "styled"
-                        and pixels.tobytes() != outputs[chunk["id"]].tobytes()
-                    ):
-                        raise ValueError(
-                            "Final artwork differs from native crops and ordered exact repairs"
-                        )
-                sources[f"chunks/{chunk['id']}/{layer}.png"] = path
+        with (
+            Image.new("RGB", (SIZE, SIZE)) as atlas,
+            Image.new("RGB", (SIZE, SIZE)) as source,
+        ):
+            for chunk in chunks:
+                for layer in index["layers"]:
+                    path = chunk["outputs"][layer]["path"]
+                    with image(path) as pixels:
+                        if (
+                            layer == "styled"
+                            and pixels.tobytes() != outputs[chunk["id"]].tobytes()
+                        ):
+                            raise ValueError(
+                                "Final artwork differs from native crops and ordered exact repairs"
+                            )
+                        target = atlas if layer == "styled" else source
+                        target.paste(pixels, tuple(chunk["bounds_px"][:2]))
+                    sources[f"chunks/{chunk['id']}/{layer}.png"] = path
+            if evidence["seam_review"]["binding"] != review_binding(atlas, source):
+                raise ValueError("Visual review RGB bindings do not match final pixels")
     finally:
         for pixels in outputs.values():
             pixels.close()

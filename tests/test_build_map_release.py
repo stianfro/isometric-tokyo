@@ -1,5 +1,6 @@
 """Native nine-patch publication, explicit repair provenance and review gates."""
 
+import hashlib
 import json
 import sys
 import tempfile
@@ -61,6 +62,11 @@ class NativeMapReleaseTests(unittest.TestCase):
             "prompt": "Synthetic fixture, not production art.",
             "patches": [],
             "repairs": [],
+            "source_comparison": {
+                "status": "reviewed",
+                "passed": True,
+                "note": "Synthetic fixture comparison only, not geographic approval",
+            },
             "seam_review": {
                 "status": "reviewed",
                 "joins": [
@@ -133,6 +139,7 @@ class NativeMapReleaseTests(unittest.TestCase):
                         "reference_sha256": [outputs["textured"]["sha256"]],
                     }
                 )
+        self.refresh_review_binding()
         for name in release.PUBLIC_INPUTS:
             path = self.repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -150,6 +157,21 @@ class NativeMapReleaseTests(unittest.TestCase):
             )
         )
         self.save()
+
+    def refresh_review_binding(self):
+        with (
+            Image.new("RGB", (3072, 3072)) as atlas,
+            Image.new("RGB", (3072, 3072)) as source,
+        ):
+            for chunk in self.index["chunks"]:
+                for layer, target in (("styled", atlas), ("textured", source)):
+                    with Image.open(
+                        self.inputs / chunk["outputs"][layer]["path"]
+                    ) as pixels:
+                        target.paste(pixels, tuple(chunk["bounds_px"][:2]))
+            self.evidence["seam_review"]["binding"] = release.review_binding(
+                atlas, source
+            )
 
     def save(self):
         self.index_path.write_text(json.dumps(self.index))
@@ -260,6 +282,108 @@ class NativeMapReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "explicitly pass"):
             self.validate()
 
+    def test_review_requires_full_well_formed_rgb_binding(self):
+        original = json.loads(json.dumps(self.evidence["seam_review"]["binding"]))
+        for binding in (
+            None,
+            {},
+            original | {"atlas_rgb_sha256": "not-a-sha256"},
+            original | {"source_rgb_sha256": 123},
+            original | {"regions_rgb_sha256": {}},
+            original
+            | {
+                "regions_rgb_sha256": original["regions_rgb_sha256"]
+                | {"extra-region": "a" * 64}
+            },
+        ):
+            self.evidence["seam_review"]["binding"] = binding
+            with self.assertRaisesRegex(ValueError, "complete RGB image bindings"):
+                self.validate()
+
+    def test_review_binding_hashes_rgb_not_encoding_and_exact_review_regions(self):
+        with (
+            Image.new("RGB", (3072, 3072), "black") as atlas,
+            Image.new("RGB", (3072, 3072), "blue") as source,
+        ):
+            atlas.paste("red", (1024, 0, 2048, 3072))
+            actual = release.review_binding(atlas, source)
+            self.assertEqual(
+                actual["atlas_rgb_sha256"],
+                hashlib.sha256(atlas.tobytes()).hexdigest(),
+            )
+            self.assertEqual(
+                actual["source_rgb_sha256"],
+                hashlib.sha256(source.tobytes()).hexdigest(),
+            )
+            self.assertEqual(
+                set(actual["regions_rgb_sha256"]), release.JOINS | release.JUNCTIONS
+            )
+            for ident, bounds in (
+                ("v1-r0", (832, 0, 1216, 1024)),
+                ("h2-c1", (1024, 1856, 2048, 2240)),
+                ("x1-y2", (768, 1792, 1280, 2304)),
+            ):
+                with atlas.crop(bounds) as region:
+                    self.assertEqual(
+                        actual["regions_rgb_sha256"][ident],
+                        hashlib.sha256(region.tobytes()).hexdigest(),
+                    )
+            first, second = self.root / "first.png", self.root / "second.png"
+            atlas.save(first, compress_level=0)
+            atlas.save(second, compress_level=9)
+            self.assertNotEqual(release.digest(first), release.digest(second))
+            with Image.open(first) as a, Image.open(second) as b:
+                self.assertEqual(
+                    release.review_binding(a, source),
+                    release.review_binding(b, source),
+                )
+            with source.convert("RGBA") as rgba:
+                with self.assertRaisesRegex(ValueError, "3072-square RGB"):
+                    release.review_binding(atlas, rgba)
+
+    def test_source_comparison_is_an_explicit_separate_review_gate(self):
+        original = self.evidence["source_comparison"]
+        self.evidence["comparison_mode"] = "reviewed-approximate"
+        for review in (
+            None,
+            {},
+            original | {"status": "pending"},
+            original | {"passed": False},
+            original | {"passed": 1},
+            original | {"note": ""},
+        ):
+            self.evidence["source_comparison"] = review
+            with self.assertRaises(ValueError):
+                self.validate()
+        del self.evidence["source_comparison"]
+        with self.assertRaisesRegex(ValueError, "evidence schema"):
+            self.validate()
+        self.evidence["source_comparison"] = original
+        self.validate()
+
+    def test_stale_review_cannot_authorize_changed_artwork_or_source(self):
+        original = json.loads(json.dumps(self.evidence["seam_review"]["binding"]))
+        self.add_repair("after-review", [1000, 1000, 1048, 1048], "red")
+        self.evidence["seam_review"]["binding"] = original
+        with self.assertRaisesRegex(ValueError, "bindings do not match final pixels"):
+            self.validate()
+        self.refresh_review_binding()
+        output = self.index["chunks"][0]["outputs"]["textured"]
+        path = self.inputs / output["path"]
+        with Image.new("RGB", (1024, 1024), "red") as pixels:
+            pixels.save(path)
+        output.update(sha256=release.digest(path), bytes=path.stat().st_size)
+        self.evidence["patches"][0]["source_sha256"] = output["sha256"]
+        with self.assertRaisesRegex(ValueError, "bindings do not match final pixels"):
+            self.validate()
+
+    def test_changed_individual_region_binding_fails_even_with_correct_atlas_hash(self):
+        self.evidence["seam_review"]["binding"]["regions_rgb_sha256"]["v1-r0"] = (
+            "0" * 64
+        )
+        with self.assertRaisesRegex(ValueError, "bindings do not match final pixels"):
+            self.validate()
+
     def test_generation_claims_cannot_authorize_scaling_or_approval(self):
         for field, value in (
             ("native_artwork", False),
@@ -358,6 +482,7 @@ class NativeMapReleaseTests(unittest.TestCase):
                 image.save(final)
             output.update(sha256=release.digest(final), bytes=final.stat().st_size)
             record["styled_sha256"] = output["sha256"]
+        self.refresh_review_binding()
 
     def test_generated_paths_symlinks_and_local_text_are_rejected(self):
         record = self.evidence["patches"][0]
