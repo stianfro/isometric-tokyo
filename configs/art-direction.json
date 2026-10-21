@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "preferred_direction": "pixel-city",
+  "selected_date": "2026-10-21",
+  "selection_scope": "Aesthetic direction for the next preview, based on the owner's preference for the second displayed image, Pixel city.",
+  "artwork_approved": false,
+  "geographic_fidelity_approved": false,
+  "production_release": false,
+  "bulk_generation_authorized": false,
+  "next_gate": "Representative source-constrained crops and a reviewed contiguous nine-patch art sample before district expansion."
+}

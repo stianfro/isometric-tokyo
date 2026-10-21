@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import OpenSeadragon from 'openseadragon'
-import { formatView, parseManifest, parseView, resolveManifestUrl, validateDescriptor, viewportHasCoverage, type AtlasManifest, type ViewState } from './atlas'
+import { parseManifest, parseView, resolveManifestUrl, validateDescriptor, viewportHasCoverage, type AtlasManifest, type ViewState } from './atlas'
+import { formatCollectionView, isCollection, parseCollection, selectedCollectionView, validateCollectionAtlas, type AtlasCollection, type AtlasCollectionView } from './collection'
 
 const manifestConfiguration = (() => {
   try {
@@ -23,8 +24,28 @@ function Icon({ name }: { name: 'plus' | 'minus' | 'home' | 'overview' | 'share'
   return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
 
+interface CollectionContext {
+  collection: AtlasCollection
+  view: AtlasCollectionView
+  select: (view: AtlasCollectionView) => void
+}
+
+function ViewToggle({ context }: { context: CollectionContext }) {
+  const index = context.collection.views.findIndex((view) => view.id === context.view.id)
+  const next = context.collection.views[(index + 1) % context.collection.views.length]
+  return <button className="view-toggle" aria-label={`Show ${next.label} view`} onClick={() => context.select(next)}>{next.label}</button>
+}
+
+function Startup({ error, retry, context }: { error?: boolean; retry: () => void; context?: CollectionContext }) {
+  return <main className="startup">
+    <div className="wordmark">isometric.tokyo</div>
+    {context && <ViewToggle context={context} />}
+    {manifestConfiguration.error ? <div role="alert"><h1>The map configuration is invalid.</h1><p>{manifestConfiguration.error}</p></div> : error ? <div role="alert"><h1>The map could not load.</h1><p>The atlas is unavailable or its manifest is invalid.</p><button className="text-button" onClick={retry}>Try again</button></div> : <p role="status">Opening {context?.view.label ?? 'Tokyo'}…</p>}
+  </main>
+}
+
 export function App() {
-  const [atlas, setAtlas] = useState<AtlasManifest | null>(null)
+  const [document, setDocument] = useState<AtlasManifest | AtlasCollection | null>(null)
   const [error, setError] = useState(false)
   const [attempt, setAttempt] = useState(0)
 
@@ -36,19 +57,60 @@ export function App() {
         if (!response.ok) throw new Error('Atlas manifest unavailable')
         return response.json() as Promise<unknown>
       })
-      .then((data) => { setAtlas(parseManifest(data)); setError(false) })
+      .then((data) => { setDocument(isCollection(data) ? parseCollection(data) : parseManifest(data)); setError(false) })
       .catch(() => { if (!abort.signal.aborted) setError(true) })
     return () => abort.abort()
   }, [attempt])
 
-  if (!atlas || !manifestConfiguration.url) return <main className="startup">
-    <div className="wordmark">isometric<span>.tokyo</span></div>
-    {manifestConfiguration.error ? <div role="alert"><h1>The map configuration is invalid.</h1><p>{manifestConfiguration.error}</p></div> : error ? <div role="alert"><h1>The map could not load.</h1><p>The atlas is unavailable or its manifest is invalid.</p><button className="text-button" onClick={() => { setError(false); setAttempt((value) => value + 1) }}>Try again</button></div> : <p role="status">Opening Tokyo…</p>}
-  </main>
-  return <AtlasMap atlas={atlas} manifestUrl={manifestConfiguration.url} />
+  const retry = () => { setError(false); setAttempt((value) => value + 1) }
+  if (!document || !manifestConfiguration.url) return <Startup error={error} retry={retry} />
+  return 'kind' in document
+    ? <CollectionMap collection={document} manifestUrl={manifestConfiguration.url} />
+    : <AtlasMap atlas={document} manifestUrl={manifestConfiguration.url} />
 }
 
-function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: string }) {
+function CollectionMap({ collection, manifestUrl }: { collection: AtlasCollection; manifestUrl: string }) {
+  const [view, setView] = useState(() => selectedCollectionView(collection, location.hash))
+  useEffect(() => {
+    const sync = () => setView(selectedCollectionView(collection, location.hash))
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [collection])
+  const select = (next: AtlasCollectionView) => {
+    if (next.id === view.id) return
+    // Art is redrawn, not registered to the source. Do not transfer coordinates.
+    history.pushState(null, '', `${location.pathname}${location.search}#view=${encodeURIComponent(next.id)}`)
+    setView(next)
+  }
+  const context = { collection, view, select }
+  return <CollectionAtlas key={view.id} context={context} manifestUrl={new URL(view.manifest, manifestUrl).href} />
+}
+
+function CollectionAtlas({ context, manifestUrl }: { context: CollectionContext; manifestUrl: string }) {
+  const [atlas, setAtlas] = useState<AtlasManifest | null>(null)
+  const [error, setError] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+  const view = context.view
+  useEffect(() => {
+    const abort = new AbortController()
+    fetch(manifestUrl, { signal: abort.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('View manifest unavailable')
+        return response.json() as Promise<unknown>
+      })
+      .then((data) => {
+        const manifest = parseManifest(data)
+        validateCollectionAtlas(view, manifest)
+        if (!abort.signal.aborted) { setAtlas(manifest); setError(false) }
+      })
+      .catch(() => { if (!abort.signal.aborted) setError(true) })
+    return () => abort.abort()
+  }, [manifestUrl, view, attempt])
+  if (!atlas) return <Startup context={context} error={error} retry={() => { setError(false); setAttempt((value) => value + 1) }} />
+  return <AtlasMap atlas={atlas} manifestUrl={manifestUrl} context={context} />
+}
+
+function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manifestUrl: string; context?: CollectionContext }) {
   const mapElement = useRef<HTMLDivElement>(null)
   const overviewElement = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<OpenSeadragon.Viewer | null>(null)
@@ -58,16 +120,17 @@ function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: s
   const ready = loadedLayer === layer
   const [failure, setFailure] = useState<'source' | 'tile' | null>(null)
   const [retry, setRetry] = useState(0)
-  const [overview, setOverview] = useState(true)
+  const [overview, setOverview] = useState(false)
   const [info, setInfo] = useState(false)
   const [message, setMessage] = useState('')
-  const [zoom, setZoom] = useState(1)
-  const [outside, setOutside] = useState(false)
   const [emptyView, setEmptyView] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
   const selected = atlas.layers.find((item) => item.id === layer)!
   const imageAspect = atlas.height / atlas.width
   const placeName = atlas.place?.name ?? atlas.title
+  const collection = context?.collection
+  const collectionView = context?.view
+  const artPreview = collectionView?.kind === 'illustration-preview'
 
   const currentView = useCallback((): ViewState | null => {
     const viewer = viewerRef.current
@@ -79,12 +142,8 @@ function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: s
   const saveView = useCallback(() => {
     const view = currentView()
     if (!view) return
-    history.replaceState(null, '', `${location.pathname}${location.search}${formatView(view)}`)
-    setZoom(view.z)
-    // The image rectangle is not a promise of geographic coverage outside its source patch.
-    const bounds = viewerRef.current!.viewport.getBounds(true)
-    setOutside(bounds.x < -0.02 || bounds.y < -0.02 || bounds.x + bounds.width > 1.02 || bounds.y + bounds.height > imageAspect + 0.02)
-  }, [currentView, imageAspect])
+    history.replaceState(null, '', `${location.pathname}${location.search}${formatCollectionView(view, collectionView)}`)
+  }, [currentView, collectionView])
 
   useEffect(() => {
     if (!mapElement.current || !overviewElement.current) return
@@ -101,7 +160,8 @@ function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: s
     const viewer = OpenSeadragon({
       element: mapElement.current,
       showNavigationControl: false,
-      showNavigator: true,
+      showNavigator: overview,
+      homeFillsViewer: Boolean(collection),
       navigatorElement,
       navigatorAutoFade: false,
       navigatorDisplayRegionColor: '#215bd6',
@@ -129,6 +189,7 @@ function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: s
     }
     const syncHash = () => {
       const view = parseView(location.hash, atlas.layers.map((item) => item.id))
+      if (collection && selectedCollectionView(collection, location.hash).id !== collectionView?.id) return
       if (view && viewer.isOpen()) { setLayer(view.layer); layerRef.current = view.layer; apply(view) }
     }
     const initialize = () => {
@@ -150,7 +211,7 @@ function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: s
       if (desired) apply(desired)
       else {
         viewer.viewport.goHome(true)
-        viewer.viewport.zoomBy(1.12, undefined, true)
+        if (!collection) viewer.viewport.zoomBy(1.12, undefined, true)
       }
       saveView()
     }
@@ -182,7 +243,7 @@ function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: s
       viewer.destroy()
       viewerRef.current = null
     }
-  }, [atlas, imageAspect, manifestUrl, retry, saveView])
+  }, [atlas, imageAspect, manifestUrl, retry, saveView, collection, collectionView, overview])
 
   useEffect(() => {
     layerRef.current = layer
@@ -238,38 +299,16 @@ function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: s
   }
 
   return <main className="atlas-shell">
-    <div ref={mapElement} className="map-canvas" aria-label={`${placeName} interactive map`} role="region" tabIndex={0} onKeyDownCapture={keyboard} aria-describedby="map-help" data-ready={ready} data-layer={layer} data-coverage={emptyView ? 'empty' : 'available'} />
-    <header className="masthead">
-      <a className="brand" href={location.pathname} aria-label="isometric.tokyo, reset map">
-        <span className="brand-glyph" lang="ja" aria-hidden="true">東京</span>
-        <span className="wordmark">isometric<span>.tokyo</span></span>
-      </a>
-      <span className="source-tag"><span /> {atlas.ai_styling ? 'Illustrated atlas' : 'Source atlas'} <span className="edition">/ 01</span></span>
-      <button className="icon-button info-button" aria-label="About this map and credits" onClick={() => setInfo(true)}><Icon name="info" /></button>
-    </header>
-
-    <section className="place-label" aria-label="Current coverage">
-      <div className="place-japanese" lang="ja">{atlas.place?.name_ja ?? '東京'}</div>
-      <h1>{placeName}</h1>
-      <p>Tokyo, block by block.</p>
-      <span className="coverage-label">{atlas.coverage.label}</span>
-    </section>
-
-    <div className="layer-control" role="group" aria-label="Map layers">
-      {atlas.layers.length > 3 ? <label className="layer-select">Map layer<select value={layer} onChange={(event) => setLayer(event.target.value)}>{atlas.layers.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label> : atlas.layers.map((item) => <button key={item.id} aria-pressed={layer === item.id} onClick={() => setLayer(item.id)}>{item.label}</button>)}
-    </div>
-
-    <nav className="map-controls" aria-label="Map navigation">
+    <div ref={mapElement} className="map-canvas" aria-label={`${placeName} interactive map`} role="region" tabIndex={0} onKeyDownCapture={keyboard} aria-describedby="map-help" data-ready={ready} data-layer={layer} data-view={collectionView?.id} data-coverage={emptyView ? 'empty' : 'available'} />
+    <nav className="map-toolbar" aria-label="Map navigation">
+      <a className="wordmark" href={location.pathname} aria-label="isometric.tokyo, reset map">isometric.tokyo</a>
+      {context && <ViewToggle context={context} />}
       <button className="icon-button" aria-label="Zoom in" onClick={() => zoomBy(1.5)}><Icon name="plus" /></button>
       <button className="icon-button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.5)}><Icon name="minus" /></button>
-      <span className="control-divider" />
-      <button className="icon-button" aria-label="Reset view" onClick={reset}><Icon name="home" /></button>
-      <button className="icon-button" aria-label="Toggle overview map" aria-pressed={overview} onClick={() => setOverview(!overview)}><Icon name="overview" /></button>
-      <button className="icon-button" aria-label="Copy link to this view" onClick={share}><Icon name="share" /></button>
+      <button className="icon-button" aria-label="About this map and credits" onClick={() => setInfo(true)}><Icon name="info" /></button>
     </nav>
 
-    <aside className={`overview ${overview ? '' : 'is-hidden'}`} aria-label="Overview map" aria-hidden={!overview}>
-      <div className="overview-label">{placeName.toUpperCase()} <span>OVERVIEW</span></div>
+    <aside className="overview" aria-label="Overview map" hidden={!overview}>
       <div id="atlas-overview" ref={overviewElement} />
     </aside>
 
@@ -278,27 +317,34 @@ function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: s
     {failure && <div className="map-notice failure" role="alert"><strong>{failure === 'source' ? 'This map layer could not open.' : 'Some map tiles could not load.'}</strong><span>{failure === 'source' ? 'The image source is missing or does not match the atlas.' : 'The missing imagery is a loading failure, not empty city.'}</span><button onClick={() => { setLoadedLayer(null); setFailure(null); setRetry((value) => value + 1) }}>Retry map</button></div>}
     {message && <div className="map-notice toast" role="status">{message}</div>}
 
-    <footer className="map-footer">
-      <div className="map-state"><span className="status-dot" /><span>{atlas.ai_styling ? 'Illustrated map' : 'Unstyled source data'}</span><span className="zoom-level" data-testid="zoom-level">{zoom.toFixed(2)}×</span></div>
-      <p id="map-help">Drag to explore <span>·</span> Scroll or pinch to zoom <span>·</span> Focus map for arrow keys</p>
-      <button className="credit-button" onClick={() => setInfo(true)}>Data & credits ↗</button>
-    </footer>
-    <div className="coverage-note">{emptyView ? 'Outside available rendered coverage.' : atlas.coverage.rectangles_px ? 'Chunked source atlas. Transparent gaps are unrendered.' : outside ? 'Outside the image: no additional coverage yet.' : 'Limited source coverage. Not a navigation map.'}</div>
+    <button className="credit-button" onClick={() => setInfo(true)}>{artPreview ? 'AI preview' : atlas.ai_styling ? 'Illustrated map' : 'Source'} · Credits</button>
+    <p id="map-help" className="sr-only">Drag to explore. Scroll or pinch to zoom. Focus the map for arrow keys. Use the information button for controls and credits.</p>
 
     <dialog ref={dialog} className="info-dialog" aria-labelledby="about-title" onCancel={() => setInfo(false)} onClick={(event) => { if (event.target === dialog.current) setInfo(false) }}>
-      <div className="dialog-header"><span className="eyebrow">THE SOURCE ATLAS</span><button className="icon-button" aria-label="Close map information" onClick={() => setInfo(false)}><Icon name="close" /></button></div>
-      <h2 id="about-title">A first piece of Tokyo.</h2>
-      <p>This is a small, explorable source study for an illustrated map of Tokyo. It is not the finished city map.</p>
-      <dl><div><dt>Coverage</dt><dd>{atlas.coverage.label}</dd></div><div><dt>Source edition</dt><dd>{atlas.source_edition}</dd></div><div><dt>Atlas</dt><dd>{atlas.id}</dd></div><div><dt>AI styling</dt><dd>{atlas.ai_styling ? 'Applied. Compare against source imagery.' : 'None. These are direct 3D source renders.'}</dd></div>{atlas.bounds_px && <div><dt>Atlas pixel bounds</dt><dd>{atlas.bounds_px.join(', ')}</dd></div>}{atlas.source_coverage_verified !== undefined && <div><dt>Source completeness</dt><dd>{atlas.source_coverage_verified ? 'Verified for this release.' : 'Not verified. Rendered bounds do not prove complete geographic data.'}</dd></div>}{atlas.artwork_approved !== undefined && <div><dt>Artwork approval</dt><dd>{atlas.artwork_approved ? 'Approved for this release.' : 'Not approved. This is a source or working release.'}</dd></div>}</dl>
+      <div className="dialog-header"><span className="eyebrow">{artPreview ? 'THE PIXEL CITY PREVIEW' : 'THE SOURCE ATLAS'}</span><button className="icon-button" aria-label="Close map information" onClick={() => setInfo(false)}><Icon name="close" /></button></div>
+      <h2 id="about-title">{placeName}</h2>
+      <div className="secondary-controls" role="group" aria-label="More map controls">
+        <button onClick={() => { reset(); setInfo(false) }}><Icon name="home" />Reset view</button>
+        <button aria-label="Toggle overview map" aria-pressed={overview} onClick={() => { setLoadedLayer(null); setOverview(!overview); setInfo(false) }}><Icon name="overview" />{overview ? 'Hide overview' : 'Show overview'}</button>
+        <button aria-label="Copy link to this view" onClick={() => { void share(); setInfo(false) }}><Icon name="share" />Copy link</button>
+      </div>
+      {atlas.layers.length > 1 && <div className="layer-control" role="group" aria-label="Map layers">
+        {atlas.layers.length > 3 ? <label>Map layer<select value={layer} onChange={(event) => setLayer(event.target.value)}>{atlas.layers.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label> : atlas.layers.map((item) => <button key={item.id} aria-pressed={layer === item.id} onClick={() => setLayer(item.id)}>{item.label}</button>)}
+      </div>}
+      {context && context.collection.views.length > 2 && <div className="layer-control" role="group" aria-label="All map views">{context.collection.views.map((view) => <button key={view.id} aria-pressed={view.id === collectionView?.id} onClick={() => context.select(view)}>{view.label}</button>)}</div>}
+      {artPreview && <p className="view-warning">AI illustration. Geography not verified. Not a navigation map.</p>}
+      <p>{artPreview ? 'Explore an AI-styled Shinjuku image in the Pixel city direction. This is a bounded art preview, not a completed or geographically verified city map.' : 'This is a small, explorable source study for an illustrated map of Tokyo. It is not the finished city map.'}</p>
+      {context && <p className="view-warning">{artPreview ? 'The illustration redraws buildings, trees and streets. Open the Source view to inspect the underlying 3D render. The two views are not pixel-aligned, so switching resets the framing.' : 'This is the unstyled 3D source render used for the art study. It has its own image coordinates. Switching to Pixel city resets the framing rather than implying an aligned comparison.'}</p>}
+      <dl><div><dt>Coverage</dt><dd>{atlas.coverage.label}</dd></div><div><dt>Source edition</dt><dd>{atlas.source_edition}</dd></div><div><dt>Atlas</dt><dd>{atlas.id}</dd></div><div><dt>AI styling</dt><dd>{artPreview ? 'Applied. Artistic details may be invented or changed.' : atlas.ai_styling ? 'Applied. Compare against source imagery.' : 'None. These are direct 3D source renders.'}</dd></div>{atlas.bounds_px && <div><dt>Atlas pixel bounds</dt><dd>{atlas.bounds_px.join(', ')}</dd></div>}{atlas.source_coverage_verified !== undefined && <div><dt>Source completeness</dt><dd>{atlas.source_coverage_verified ? 'Verified for this release.' : 'Not verified. Rendered bounds do not prove complete geographic data.'}</dd></div>}{atlas.artwork_approved !== undefined && <div><dt>Artwork approval</dt><dd>{atlas.artwork_approved ? 'Approved for this release.' : artPreview ? 'Art direction selected. Geographic fidelity and production artwork are not approved.' : 'Not approved. This is a source or working release.'}</dd></div>}</dl>
       <h3>Read the gaps, too.</h3>
-      <p>White buildings can indicate missing textures or lower-detail geometry. Trees mostly appear in ground photography. Source datasets can have mixed building detail, acquisition dates and alignment limitations. It is not a live map or a navigation aid.</p>
+      <p>{artPreview ? 'Buildings, paths, vegetation and road widths can differ from the source. A preferred visual style is not approval of geographic accuracy. Coverage ends at the image edge.' : 'White buildings can indicate missing textures or lower-detail geometry. Vegetation may include mapped trees and artistic woodland fill. Source datasets can have mixed building detail, acquisition dates and alignment limitations. It is not a live map or a navigation aid.'}</p>
       <p>{atlas.limitations}</p>
       <p>{atlas.modifications ?? "Independent project. No source-provider endorsement."}</p>
       <h3>Source credits</h3>
       <ul>{atlas.attribution.map((credit) => <li key={credit.url}><a href={credit.url} target="_blank" rel="noreferrer">{credit.label} ↗</a></li>)}</ul>
       {atlas.notice && <p><a href={new URL(atlas.notice, manifestUrl).href} target="_blank" rel="noreferrer">Full source terms and modification notice ↗</a></p>}
       {selected.original ? <a className="download-link" href={new URL(selected.original, manifestUrl).href} download>Download {selected.label.toLowerCase()} PNG ↓</a> : <p>Original images are retained per render chunk. This layer has no single-image download.</p>}
-      <p className="dialog-help">Keyboard: arrow keys pan; + and − zoom; Home or 0 resets. Shared links preserve the image position, zoom and selected layer.</p>
+      <p className="dialog-help">Keyboard: arrow keys pan; + and − zoom; Home or 0 resets. Shared links preserve the image position, zoom and selected {context ? 'view and layer' : 'layer'}.</p>
     </dialog>
   </main>
 }

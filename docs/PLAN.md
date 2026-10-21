@@ -328,28 +328,27 @@ unfinished collection of patches must not be labelled the completed Tokyo map.
 
 ## Next implementation queue
 
-Start with these tasks, not another standalone screenshot. Paths and task names
-below are proposed additions; they do not exist yet unless noted otherwise.
+The source pipeline and first interactive preview are implemented. The current
+queue follows the preferred Pixel city aesthetic without treating one attractive
+image as a completed map:
 
-| Order | Work and likely files | Acceptance evidence |
+| Order | Work | Acceptance evidence |
 | --- | --- | --- |
-| 1A | Atlas schema and Shinjuku config in `configs/`; projection math in `scripts/geo.py` or a dedicated atlas module | Fixed fixtures, chunk-invariant pixel coordinates, explicit height convention |
-| 1B | Sample pyramid exporter in `scripts/`; release manifest schema | Matching raw/geometry pyramids, completeness and dimension tests |
-| 1C | Viewer in `viewer/` | Pan/zoom, minimap, aligned comparison, URL round trip, credits, browser tests |
-| 2A | Split `scripts/render_sample.py`; add chunk planner and overscan fixtures | 3 × 3 source atlas compared with a single reference render |
-| 2B | Correct ground mapping; terrain and feature-ID checks | Known geographic control points, boundary elevations and ID fixtures |
-| 2C | Source inventory and representative style-crop set | Coverage report, terms, quality flags and approved pilot inputs |
+| 3A | Exercise Pixel city on high-rise, ordinary blocks, station, park and water crops | Source/guide comparisons and recorded geographic defects, not style alone |
+| 3B | Produce a contiguous nine-patch illustration pilot with controlled overlap | Horizontal, vertical and four-way joins reviewed at native size; no broken roads or invented landmarks |
+| 4A | Add transactional generation reservations and measured production accounting | Finite call/spend ceilings, retry costs, interruption recovery and unknown costs never treated as zero |
+| 4B | Connect map-based region review to repair and assembled-art acceptance | Exact output hashes and dependency states bind each decision; rejected art cannot enter a production release |
+| 5A | Define and complete the first connected illustrated district | Full coverage and seam review, accepted-output cost and review-time measurements |
 
-1A defines the contract for 1B and 1C. After that, viewer and renderer changes can
-proceed independently against the same manifest. Preserve the existing sample
-commands while introducing parameterized tasks.
+The service-facing preview is a separate, useful milestone: an interactive
+Pixel city view, independent source view, explicit provenance, immutable image
+versions and a checked web bundle. It does not waive any of the production-art
+acceptance gates above. See [preview releases](PREVIEW_RELEASE.md).
 
-Use `just` as the entry point. Proposed tasks include `just atlas-validate`,
-`just tiles AREA`, `just viewer-dev`, `just viewer-test`, `just render-area AREA`,
-`just verify-atlas AREA` and later `just review`. Extend the existing `just check`
-to include new lints and unit tests; add a documented integration task for Blender
-fixtures and browser checks. Use worktree-local `.cache/` directories. Validate
-any future YAML with `yq`. Commit changes using conventional commits.
+Use `just` as the entry point. `just preview-package` builds the selected preview
+and a standalone checked artifact. Existing source, render, review and repair
+tasks remain available. Use worktree-local `.cache/` directories, validate YAML
+with `yq`, and use conventional commits.
 
 ## Decisions and measurement checkpoints
 

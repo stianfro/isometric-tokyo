@@ -43,6 +43,8 @@ jobs:
         run: just check
       - name: Build and verify the source atlas
         run: just viewer-build verify-atlas
+      - name: Build and verify the selected preview bundle
+        run: just preview-package preview-verify
       - name: Install browser test dependencies
         run: just viewer-browsers-ci
       - name: Desktop and mobile browser tests

@@ -41,7 +41,9 @@ test('real sparse chunk DZI loads aligned paired layers with signed global offse
   await expect(map(page)).toHaveAttribute('data-ready', 'true')
   await expect(map(page)).toHaveAttribute('data-coverage', 'available')
   const before = new URL(page.url()).hash
+  await page.getByRole('button', { name: 'About this map and credits' }).click()
   await page.getByRole('button', { name: 'Geometry only', exact: true }).click()
+  await page.getByRole('button', { name: 'Close map information' }).click()
   await expect(map(page)).toHaveAttribute('data-ready', 'true')
   await expect(map(page)).toHaveAttribute('data-layer', 'geometry')
   expect(new URL(page.url()).hash).toBe(before.replace('source_texture.v1', 'geometry'))
@@ -61,6 +63,7 @@ test('intentional sparse gaps finish loading without requesting missing tiles or
   await expect(map(page)).toHaveAttribute('data-coverage', 'empty')
   await expect(page.getByRole('status')).toContainText('No rendered chunks in this view.')
   await expect(page.getByRole('alert')).toHaveCount(0)
+  await page.getByRole('button', { name: 'About this map and credits' }).click()
   await page.getByRole('button', { name: 'Reset view' }).click()
   await expect(map(page)).toHaveAttribute('data-coverage', 'available')
   await expect(map(page)).toHaveAttribute('data-ready', 'true')

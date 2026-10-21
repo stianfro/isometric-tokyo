@@ -7,8 +7,8 @@ source-quality result as the finished illustrated Tokyo map.
 | --- | --- | --- |
 | 1: interactive source map | Implemented and tested | Tiled source/geometry viewer, minimap, keyboard/touch controls, shared views, credits, errors and matching atlas contract |
 | 2: repeatable source atlas | In progress | Global pixel grid, no geometry cuts at chunk edges, corrected ground mapping, real and synthetic 3 x 3 seam checks, exact building-ID/depth/normal/semantic guides, 23-ward metadata inventory; road/water context with original feature IDs; bounded camera/sun source-selection audit, native terrain edge welding and separately attributed mapped vegetation; actual-world completeness and remaining vertical disagreements still need review |
-| 3: art direction | Not approved | Three context-aware material candidates, a matching expanded source reference and two labeled AI-assisted studies; broader representative crops, fidelity review and owner approval are required before bulk artwork |
-| 4: production workflow | In progress | Resumable bounded render batches, leases/retries, checksum-gated review desk, sparse image pyramids and incremental rebuilds; bounded paired seam review, immutable repair import and reviewed repair-aware chunk export; map-based review navigation and art-generation accounting remain |
+| 3: art direction | Pixel city preferred | Owner preference recorded separately from geographic approval; explorable illustrated preview and independent source view; representative crops and a seamless nine-patch fidelity review remain before bulk artwork |
+| 4: production workflow | In progress | Resumable bounded render batches, leases/retries, checksum-gated review desk, sparse image pyramids and incremental rebuilds; bounded paired seam review, immutable repair import and reviewed repair-aware chunk export; content-addressed preview and complete web bundles with standalone checksum verification; map-based review navigation and art-generation accounting remain |
 | 5: illustrated Shinjuku | Pending | Requires approved art direction, complete local source treatment and district-wide review |
 | 6: connected Tokyo expansion | Pending | Requires district measurements and accepted coverage batches |
 | 7: completed product | Pending | Requires the agreed coverage and final acceptance audit |
@@ -80,8 +80,11 @@ source-quality result as the finished illustrated Tokyo map.
 
 ## What the map does not yet claim
 
-The displayed atlas is still the attributed raw source study. It has mixed LOD,
-missing textures, photographic shadows and cropped coverage edges. The new
+The preview now opens the AI-assisted Pixel city image and retains the expanded
+source render as an independent view. Their native dimensions and image
+coordinates differ; switching resets framing. The earlier source/geometry atlas
+is still available. Source data has mixed LOD, missing textures, photographic
+shadows and cropped coverage edges. The new
 renderer retains whole loaded geometry, but loaded geometry is not proof that
 all real-world features are present. The new bounded audit verifies selected
 metadata volumes for this view and directional sun, full terrain support and the
@@ -89,8 +92,9 @@ orthophoto tile grid. `source_coverage_verified: false` still records unknown
 real-world completeness and source accuracy, rather than contradicting those
 narrower passed checks. Diffuse illumination is not covered by the sun-cone audit.
 
-No final art direction has been approved, no paid bulk image generation has run,
-and no district or 23-ward completion claim is made. Source-review approvals do
+Pixel city is the preferred aesthetic direction, not approval of geographic
+fidelity or production artwork. No bulk image generation has run, and no district
+or 23-ward completion claim is made. Source-review approvals do
 not constitute final artwork approval.
 
 ## Next acceptance gates
@@ -99,8 +103,8 @@ not constitute final artwork approval.
    assumptions. Catalog completeness is not completeness of the real city.
 2. Inspect remaining building/road/water terrain separations and mapped vegetation
    placement. Source heights stay unchanged unless a defensible correction exists.
-3. Compare original art-direction candidates on representative geography, then
-   obtain style approval. Preserve raw-reference comparison and guide constraints.
+3. Apply the preferred Pixel city direction to representative geography, then
+   inspect source fidelity and nine-patch joins. Preserve reference and guide constraints.
 4. Exercise repair review and regeneration on real artwork after source/style
    approval, then add map-based region navigation and art-generation accounting.
 5. Complete an illustrated Shinjuku district, measure accepted-output cost and
@@ -117,7 +121,35 @@ non-Blender suites and browser tests once installed as a GitHub workflow. The
 current publishing credential cannot add workflow files, so no remote CI result
 is claimed. YAML changes are validated with `yq`.
 
-Latest verification: 253 Python tests, 67 viewer tests, 6 review-model tests and
-32 headless browser tests pass (358 total). The baseline viewer build, atlas
-verification, fresh synthetic seam fixture and expanded real-source seam/guide
-comparison pass. No remote CI execution is claimed.
+Latest verification: 284 Python tests, 88 viewer tests, 6 review-model tests and
+42 headless browser tests pass (420 total). Preview packaging, standalone bundle
+verification and the existing source-atlas verification pass. The prior geographic source comparison remains unchanged; this work does
+not reinterpret its results as art approval. No remote CI execution is claimed.
+
+## Interactive preview and immutable app release
+
+- The map fills the screen, with one compact toolbar and a small credits button.
+  There are no place cards or full-width bars. Optional overview, sharing, reset
+  and detailed controls sit in the information panel.
+- Pixel city opens as an independently tiled 1254 by 1254 image. The expanded
+  source render remains 1024 by 1024, with no rescaling to imply registration.
+- View selection, position and zoom survive shared links. View switches reset
+  framing, browser history works, and failed view loads retain a path back.
+- AI and geographic-review status remain visible. Credits include all three
+  source wards, orthophotography, terrain and the OSM vegetation supplement.
+- Each image version is content-addressed by public inputs, notices, tooling and
+  exporter code. The active catalog changes only after a full verification.
+- Web bundles contain only built browser assets and the selected verified
+  preview, with original PNGs, evidence, licences and the actual ODbL database.
+  Unrelated public folders, symlinks, modified inputs and corrupt prior releases
+  fail validation. Native-resolution tiles preserve original pixels exactly.
+- The illustrated image is a bounded preview, not a completed district or a
+  seamless generated tile set. No additional model calls are needed to build it.
+
+See [preview releases](PREVIEW_RELEASE.md) for the repeatable artifact workflow.
+
+Cold first-view tile payload in the automated minimal-UI smoke test was
+2,909,598 bytes on the desktop viewport and 1,782,468 bytes on the Pixel 7
+emulation. Both are below the 3 MiB initial-imagery target. These are local
+encoded-image byte counts, not physical-phone or throttled-network benchmarks.
+The viewer does not fetch original PNGs during normal navigation.

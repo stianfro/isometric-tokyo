@@ -4,16 +4,22 @@ An independent illustrated isometric map of Tokyo in development, using open
 Project PLATEAU data. The goal is a continuous, explorable map in the same product
 category as [isometric.nyc](https://isometric.nyc/), with original Tokyo artwork.
 
-**Current state:** an interactive, tiled Shinjuku source atlas, a repeatable chunk
-renderer, geographic guide layers and a source-output review workflow. Expanded
-source coverage, reconciled terrain and mapped vegetation now support a bounded
-Shinjuku art-direction study. No final artwork or complete district is approved.
+**Current state:** an explorable **Pixel city** Shinjuku preview, with a separate
+source-render view, shareable positions and visible provenance. The interface
+keeps the map full-screen, with a compact toolbar and details behind Credits.
+Pixel city is the preferred art direction. The versioned preview build includes verified image
+tiles, source notices and the adapted vegetation database. It is not a complete
+district or geographically approved map. Geographic rendering, guide layers and
+the source-output review workflow remain available.
 
-![Unstyled Shinjuku sample](previews/shinjuku-isometric.png)
+![Pixel city Shinjuku preview, AI-assisted](previews/shinjuku-art/ai-pixel-city.png)
 
-Derived from Tokyo Metropolitan Government / Project PLATEAU, Shinjuku FY2025,
-and PLATEAU-Ortho 2023. Terrain: **PLATEAU | Mapterhorn | 国土地理院**.
-Selected, transformed, cropped and rendered by this project. No AI styling.
+Derived from Tokyo Metropolitan Government / Project PLATEAU, Shinjuku, Shibuya
+and Nakano FY2025, and PLATEAU-Ortho 2023.
+Terrain: **PLATEAU | Mapterhorn | 国土地理院**.
+Vegetation: **© OpenStreetMap contributors**, ODbL.
+Selected, transformed and rendered, then AI-styled. Roofs, planting, surfaces
+and other details may differ from the source.
 Independent project, not an official product or endorsement.
 See [source terms and full attribution](THIRD_PARTY_NOTICES.md).
 
@@ -21,8 +27,10 @@ See [source terms and full attribution](THIRD_PARTY_NOTICES.md).
 
 - A roughly 800 × 800 metre sample around the Tokyo Metropolitan Government buildings.
 - Scripts to download bounded building, orthophoto, terrain, road and water samples.
-- A browser viewer with pan/zoom, touch and keyboard controls, aligned source
-  comparison, an overview map and shareable views.
+- A browser viewer with pan/zoom, touch and keyboard controls, an overview map
+  and shareable views. The illustrated preview and source render have separate
+  image coordinates. The earlier source/geometry atlas retains aligned comparison.
+- Content-addressed preview versions and verified, self-contained web bundles.
 - Pixel-aligned Blender chunk rendering, verified against full-view references.
 - Original building/context feature-ID, semantic, silhouette, depth and normal guides.
 - Bounded-memory image pyramids with selective rebuilding.
@@ -35,7 +43,7 @@ See [source terms and full attribution](THIRD_PARTY_NOTICES.md).
 - [Detailed source-quality notes and provenance](README.txt).
 
 Landmark geometry is useful, but some smaller buildings are untextured. The
-original atlas above has photographic vegetation only. New studies supplement
+original source atlas has photographic vegetation only. New studies supplement
 it with separately attributed mapped tree points and woodland representations,
 not a claimed tree survey. Source dates and LOD vary.
 The FY2025 dataset edition does not mean that all photography was taken in 2025.
@@ -67,7 +75,9 @@ Both retain a recognizable composition but redraw details and building edges.
 Pixel city adds green roofs and planting not established by the source. Neither
 is a geometry-accurate comparison layer or approved artwork. Source credits and
 terms above still apply. [Prompts, provenance and limitations](previews/shinjuku-art/ai-studies.json)
-are retained; these images have not replaced the source atlas.
+are retained. The preview opens Pixel city by default and keeps the expanded
+source render available as a distinct view. Switching views resets framing,
+rather than pretending that generated details match source pixels.
 
 ## Roadmap
 
@@ -77,7 +87,7 @@ review tools, a complete illustrated district, then connected expansion toward
 Tokyo's 23 special wards. Each phase has deliverables and acceptance criteria.
 The current sample is the baseline, not the completed product.
 
-## Explore the source atlas
+## Explore the preview
 
 Requirements: Python 3.11+, Node.js 26, `just` and `uv`. Blender 5.2 is needed only
 for new geographic renders and scene checks, not for the viewer. No PLATEAU
@@ -87,19 +97,24 @@ account or API key is required for these sources.
 just bootstrap
 export PYTHON="$PWD/.venv/bin/python"
 just check
-just viewer-dev
+just preview-dev
 ```
 
-The viewer task builds verified image tiles from the attributed previews already
-in this repository. It prints the local development address; it does not open a
-browser automatically. Original PNGs remain available from the map credits.
+The preview task builds verified image tiles from the attributed previews already
+in this repository, without new geographic downloads or image generation.
+It prints the local development address; it does not open a browser automatically. Original PNGs remain available from the map credits.
 
 ```sh
 just viewer-browsers
 just viewer-e2e
-just viewer-build
-just verify-atlas
+just preview-package
+just preview-verify
 ```
+
+The immutable bundle contains the app, selected preview version, original images,
+source evidence, licences and ODbL data. See [preview releases](docs/PREVIEW_RELEASE.md)
+for validation and version selection. `just viewer-dev` still opens the earlier
+aligned source/geometry atlas. Neither command opens a browser automatically.
 
 ## Reproduce geographic renders
 

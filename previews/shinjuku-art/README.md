@@ -1,13 +1,16 @@
-# Shinjuku art-direction studies, unapproved
+# Shinjuku art-direction studies
 
-These are review samples, not a finished district or approved atlas release.
+Pixel city is the preferred aesthetic direction and the interactive preview
+default. These remain review samples, not a finished district or geographically
+approved atlas release. The selection is recorded separately in
+[`art-direction.json`](../../configs/art-direction.json).
 
 | Fixed geometry, no AI | Generative studies |
 | --- | --- |
 | [Source and mapped context](source-reference.png) | [D. Pixel city](ai-pixel-city.png) |
 | [A. Atlas ink](atlas-ink.png) | [E. Printed atlas](ai-printed-atlas.png) |
 | [B. Garden city](garden-city.png) | AI samples redraw details and are not pixel-aligned source geometry. |
-| [C. Terracotta blocks](terracotta.png) | They have not replaced the interactive source atlas. |
+| [C. Terracotta blocks](terracotta.png) | Pixel city and source are separate interactive views, not aligned layers. |
 
 [Four-panel material comparison](style-comparison.png).
 The material studies share all source geometry and one world camera. Their facade

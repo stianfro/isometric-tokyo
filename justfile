@@ -219,3 +219,25 @@ art-verify:
 source-study destination="renders/source-study":
     blender --background --factory-startup --python-exit-code 1 --python scripts/render_atlas.py -- --config configs/shinjuku-source-check.json --manifest data/coverage-buildings/manifest.json --ground data/ground-study-v2/manifest.json --terrain data/terrain-study-v2/mesh.json --context data/context-study-v2/manifest.json --vegetation data/vegetation/manifest.json --guides --reference --max-source-tiles 512 --max-source-mib 1024 --output "{{destination}}"
     {{python}} scripts/render_geometry.py finalize --index "{{destination}}/render-index.json" --assemble --verify-seams
+
+# Independent art/source views, not an aligned or approved geographic atlas.
+preview-tiles:
+    {{python}} scripts/build_preview_release.py
+
+preview-verify:
+    {{python}} scripts/build_preview_release.py --verify
+
+preview-dev: preview-tiles
+    cd viewer && VITE_ATLAS_MANIFEST=preview/manifest.json npm run dev
+
+preview-build: preview-tiles
+    cd viewer && ISOMETRIC_SKIP_PUBLIC=1 VITE_ATLAS_MANIFEST=preview/manifest.json npm run build
+
+preview-package: preview-build
+    {{python}} scripts/package_preview.py --build viewer/dist --preview viewer/public/preview --output renders/web-releases
+
+viewer-e2e-preview: tiles
+    export PYTHON="$({{python}} -c 'import sys; print(sys.executable)')"; cd viewer && PLAYWRIGHT_BROWSERS_PATH=../.cache/playwright npm run test:e2e -- e2e/preview.spec.ts
+
+preview-package-verify directory:
+    {{python}} scripts/package_preview.py --verify "{{directory}}"

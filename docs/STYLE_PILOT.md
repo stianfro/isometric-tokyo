@@ -2,7 +2,8 @@
 
 These studies compare candidate treatments, not an approved final map. Source
 selection, terrain diagnostics and vegetation provenance remain separate from
-art approval. The interactive baseline still displays the original source atlas.
+art approval. The preview now opens Pixel city, with the expanded source render retained as
+a distinct view. The original aligned source/geometry atlas remains available.
 
 ## Geometry-preserving studies
 
@@ -79,7 +80,8 @@ The published [Pixel city](../previews/shinjuku-art/ai-pixel-city.png) and
 [Printed atlas](../previews/shinjuku-art/ai-printed-atlas.png) studies were generated
 from the same Atlas ink render in two bounded image-generation calls. The tool
 returned 1254 by 1254 pixel images. The original reference is 1024 by 1024.
-They are not aligned atlas tiles and have not been substituted into the viewer.
+They are not aligned atlas tiles. Pixel city is available in the interactive
+preview as a separate image view, not a registered source-comparison layer.
 
 - **D. Pixel city** uses stronger blue glazing, brick accents and a simulation-game
   treatment. It is closer to the playful map direction, but adds unsupported
@@ -98,5 +100,8 @@ production cartography.
 [ai-studies.json](../previews/shinjuku-art/ai-studies.json) records exact prompts,
 reference RGB hash, output hashes, dimensions, source notices and observed
 limits. Model version and actual cost were not exposed by the tool and are not
-invented. All candidates remain unapproved. The public source and material
-comparison is retained beside them for independent inspection.
+invented. The owner preferred the second displayed image, Pixel city. That
+aesthetic preference is recorded in `configs/art-direction.json`, without
+rewriting the original generation-time status. Geographic fidelity and production
+artwork remain unapproved. The source and material comparison remain available
+for independent inspection.
