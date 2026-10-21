@@ -39,6 +39,11 @@ def arguments():
     parser.add_argument("--ground", type=Path)
     parser.add_argument("--terrain", type=Path)
     parser.add_argument(
+        "--context",
+        type=Path,
+        help="Optional checked PLATEAU transportation, water or vegetation manifest",
+    )
+    parser.add_argument(
         "--reference",
         action="store_true",
         help="Also render one full-view reference for a bounded chunk comparison",
@@ -122,7 +127,19 @@ def prepare_source(args, config):
         or not 1 <= len(data["tiles"]) <= args.max_source_tiles
     ):
         raise ValueError("Building input exceeds the source tile-count budget")
+    context_data = None
+    context_inputs = []
+    context_counts = {}
+    if getattr(args, "context", None):
+        from render_context import context_assets
+
+        context_data, context_inputs, context_counts = context_assets(args.context)
+        if len(data["tiles"]) + len(context_data["tiles"]) > args.max_source_tiles:
+            raise ValueError(
+                "Building and context tiles exceed the combined tile-count budget"
+            )
     source_paths = [args.manifest.parent / tile["glb_path"] for tile in data["tiles"]]
+    source_paths += [path for path, _ in context_inputs]
     if args.guides:
         source_paths += [args.manifest.parent / tile["path"] for tile in data["tiles"]]
     if args.ground:
@@ -136,6 +153,10 @@ def prepare_source(args, config):
     source_bytes = sum(path.stat().st_size for path in source_paths)
     if source_bytes > args.max_source_mib * 1024 * 1024:
         raise ValueError("Building/ground/terrain files exceed the input byte budget")
+    if context_inputs:
+        from render_context import verify_context_assets
+
+        verify_context_assets(context_inputs)
     lon, lat = config.origin_lonlat
     objects = import_tiles(args.manifest, data, lon, lat)
     for obj in objects:
@@ -148,6 +169,24 @@ def prepare_source(args, config):
         raise ValueError(
             f"Loaded geometry exceeds configured vertical range: {stats['bounds_enu_m']}"
         )
+    context_stats = None
+    if context_data is not None:
+        from render_context import CONTEXT_SEMANTICS, vertical_alignment_diagnostics
+
+        context_objects = import_tiles(args.context, context_data, lon, lat)
+        for obj in context_objects:
+            obj["atlas_semantic"] = CONTEXT_SEMANTICS[obj["source_context_type"]]
+        context_stats = geometry_stats(context_objects)
+        if (
+            context_stats["bounds_enu_m"][2] < config.vertical_range_enu_m[0]
+            or context_stats["bounds_enu_m"][5] > config.vertical_range_enu_m[1]
+        ):
+            raise ValueError(
+                "Original context elevations exceed the configured vertical range; no height shifts were applied"
+            )
+        context_stats["height_adjustment_m"] = 0
+        context_stats["vertical_alignment_reviewed"] = False
+        stats["context"] = context_stats
     west, south, east, north = data["bbox"]
     corners = [
         local_point(x, y, 0, lon, lat) for x in (west, east) for y in (south, north)
@@ -164,6 +203,10 @@ def prepare_source(args, config):
     )
     ground.name = "Full loaded terrain, uncropped at image boundaries"
     ground["atlas_semantic"] = "ground"
+    if context_data is not None:
+        context_stats["vertical_alignment_diagnostics"] = (
+            vertical_alignment_diagnostics(context_objects, ground)
+        )
     hashes = {"building-manifest": sha256(args.manifest)}
     for number, tile in enumerate(data["tiles"]):
         hashes[f"building-glb-{number}"] = sha256(
@@ -177,6 +220,10 @@ def prepare_source(args, config):
         )
     if args.terrain:
         hashes["terrain-mesh"] = sha256(args.terrain)
+    if context_data is not None:
+        hashes["context-manifest"] = sha256(args.context)
+        for number, (_, checksum) in enumerate(context_inputs):
+            hashes[f"context-asset-{number}"] = checksum
     provenance = {
         "input_sha256": hashes,
         "input_file_bytes": source_bytes,
@@ -203,6 +250,38 @@ def prepare_source(args, config):
             "Photographic shadows, mixed LOD and terrain alignment require source review.",
         ],
     }
+    if context_data is not None:
+        provenance["context"] = {
+            "source_counts": context_counts,
+            "source_feature_count": context_data["feature_count"],
+            "attribution": context_data.get("attribution"),
+            "license": context_data.get("license"),
+            "edition": context_data.get("edition"),
+            "sources": [
+                {
+                    key: source.get(key)
+                    for key in (
+                        "id",
+                        "dataset_id",
+                        "type",
+                        "name",
+                        "lod",
+                        "url",
+                        "intersecting_tile_count",
+                    )
+                }
+                for source in context_data.get("sources", [])
+            ],
+            "original_bounds_enu_m": context_stats["bounds_enu_m"],
+            "vertical_alignment_diagnostics": context_stats[
+                "vertical_alignment_diagnostics"
+            ],
+            "height_adjustment_m": 0,
+            "vertical_alignment_reviewed": False,
+        }
+        provenance["limitations"].append(
+            "Context meshes retain original elevations. Road/terrain overlap, water visibility and source edition alignment require review; no corrective height shift was invented."
+        )
     return ground_height, stats, provenance
 
 
@@ -380,7 +459,9 @@ def main():
                 "unresolved_tile_feature_ids": {},
             }
         else:
-            registry, source_hashes = source_registry(args.manifest)
+            registry, source_hashes = source_registry(
+                args.manifest, context_path=args.context
+            )
             provenance["input_sha256"].update(source_hashes)
         guides = build_guide_scene(list(bpy.context.scene.objects), config, registry)
         registry_relative = "guides/feature-registry.json"
@@ -426,7 +507,13 @@ def main():
         "renderer": "atlas-source-v1",
         "renderer-script": sha256(Path(__file__))[:16],
     }
-    for dependency in ("atlas.py", "geo.py", "gltf_compat.py", "render_sample.py"):
+    for dependency in (
+        "atlas.py",
+        "geo.py",
+        "gltf_compat.py",
+        "render_sample.py",
+        "render_context.py",
+    ):
         versions["script-" + dependency.replace("_", "-").replace(".", "-")] = sha256(
             Path(__file__).parent / dependency
         )

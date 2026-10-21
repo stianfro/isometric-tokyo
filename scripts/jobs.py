@@ -225,7 +225,17 @@ class Ledger:
             )
             self.event(ident, "finished")
 
-    def import_completed(self, kind, area, payload, workspace, paths):
+    def import_completed(
+        self,
+        kind,
+        area,
+        payload,
+        workspace,
+        paths,
+        dependencies=(),
+        invalidate_dependents_of=(),
+        invalidation_note="",
+    ):
         """Register verified external render outputs for review, never approval."""
         if not paths or len(set(paths)) != len(paths):
             raise ValueError("Unique artifacts are required")
@@ -240,8 +250,16 @@ class Ledger:
         if not kind or not area or not isinstance(payload, dict):
             raise ValueError("Kind, area and object payload are required")
         inputs = {**payload, "imported_artifacts": records}
-        ident = job_id(kind, area, inputs, [])
+        dependencies = sorted(set(dependencies))
+        roots = sorted(set(invalidate_dependents_of))
+        if not set(roots).issubset(dependencies):
+            raise ValueError("Invalidation roots must be imported job dependencies")
+        if roots and not invalidation_note.strip():
+            raise ValueError("Invalidation reason required")
+        ident = job_id(kind, area, inputs, dependencies)
         with self.transaction():
+            for dependency in dependencies:
+                self.get(dependency)
             cursor = self.db.execute(
                 "INSERT OR IGNORE INTO jobs(id,kind,area,payload,state,attempts,max_attempts,artifacts,updated) VALUES(?,?,?,?,?,?,?,?,?)",
                 (
@@ -257,6 +275,17 @@ class Ledger:
                 ),
             )
             if cursor.rowcount:
+                for dependency in dependencies:
+                    self.db.execute(
+                        "INSERT INTO dependencies VALUES(?,?)", (ident, dependency)
+                    )
+                # Replacing an image invalidates old descendants, not its
+                # immutable source or this newly submitted repair.
+                affected = set()
+                for root in roots:
+                    affected.update(self.dependency_closure(root))
+                for affected_id in sorted(affected - set(roots) - {ident}):
+                    self.mark_invalid(affected_id, invalidation_note)
                 self.event(ident, "imported_for_review")
             elif self.get(ident)["artifacts"] != records:
                 raise ValueError("Existing job does not match imported artifacts")
@@ -280,7 +309,21 @@ class Ledger:
             job = self.get(ident)
             if job["state"] != "needs_review":
                 raise ValueError("Only completed jobs can be approved")
-            for record in job["artifacts"]:
+            ancestors = self.db.execute(
+                """WITH RECURSIVE ancestors(id) AS (
+                    SELECT dependency FROM dependencies WHERE job=?
+                    UNION SELECT d.dependency FROM dependencies d
+                    JOIN ancestors a ON d.job=a.id
+                ) SELECT id FROM ancestors""",
+                (ident,),
+            ).fetchall()
+            records = list(job["artifacts"])
+            for ancestor in ancestors:
+                dependency = self.get(ancestor["id"])
+                if dependency["state"] != "approved":
+                    raise ValueError("All dependencies must be approved first")
+                records.extend(dependency["artifacts"])
+            for record in records:
                 path = artifact_path(workspace, record["path"])
                 if (
                     not path.is_file()
@@ -294,27 +337,36 @@ class Ledger:
             )
             self.event(ident, "approved", note)
 
+    def dependency_closure(self, ident):
+        return {
+            row["id"]
+            for row in self.db.execute(
+                """WITH RECURSIVE affected(id) AS (
+                    SELECT ? UNION SELECT d.job FROM dependencies d
+                    JOIN affected a ON d.dependency=a.id
+                ) SELECT id FROM affected""",
+                (ident,),
+            )
+        }
+
+    def mark_invalid(self, ident, reason):
+        self.db.execute(
+            "UPDATE jobs SET state='failed',lease_token=NULL,lease_until=NULL,"
+            "worker=NULL,error=?,updated=? WHERE id=?",
+            (reason, self.clock(), ident),
+        )
+        self.event(ident, "invalidated", reason)
+
     def invalidate(self, ident, reason):
         """Invalidate a region and its dependency closure, preserving audit history."""
         if not reason.strip():
             raise ValueError("Invalidation reason required")
         with self.transaction():
             self.get(ident)
-            rows = self.db.execute(
-                """
-                WITH RECURSIVE affected(id) AS (
-                    SELECT ? UNION SELECT d.job FROM dependencies d JOIN affected a ON d.dependency=a.id
-                ) SELECT id FROM affected
-            """,
-                (ident,),
-            ).fetchall()
-            for row in rows:
-                self.db.execute(
-                    "UPDATE jobs SET state='failed',lease_token=NULL,lease_until=NULL,worker=NULL,error=?,updated=? WHERE id=?",
-                    (reason, self.clock(), row["id"]),
-                )
-                self.event(row["id"], "invalidated", reason)
-            return sorted(row["id"] for row in rows)
+            affected = self.dependency_closure(ident)
+            for affected_id in sorted(affected):
+                self.mark_invalid(affected_id, reason)
+            return sorted(affected)
 
     def retry(self, ident):
         with self.transaction():

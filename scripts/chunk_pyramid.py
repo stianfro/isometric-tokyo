@@ -18,6 +18,7 @@ from pathlib import Path
 
 from atlas import canonical_json, validate_bounds
 from PIL import Image
+from viewer_manifest import manifest_for, validate_metadata
 
 ALGORITHM = "rgba-box2-sparse-v1"
 MAX_CHUNK_PIXELS = 16_000_000
@@ -313,6 +314,14 @@ def verify_pyramid(directory):
     sizes = dimensions(bounds[2] - bounds[0], bounds[3] - bounds[1])
     coverage = level_coverage(sources, bounds, sizes, settings["tile_size"])
     expected = {MARKER} | {f"{layer}.dzi" for layer in settings["layers"]}
+    if "viewer_metadata" in settings:
+        expected.update({"manifest.json", "NOTICE.txt"})
+        metadata = validate_metadata(settings["viewer_metadata"])
+        expected_manifest = manifest_for(metadata, settings, sources, data["id"])
+        if json.loads((directory / "manifest.json").read_text()) != expected_manifest:
+            raise ValueError("Viewer manifest disagrees with chunk release")
+        if (directory / "NOTICE.txt").read_text() != metadata["notice_text"]:
+            raise ValueError("Source notice disagrees with viewer metadata")
     count = 0
     for layer in settings["layers"]:
         descriptor = ET.parse(safe_path(directory, f"{layer}.dzi")).getroot()
@@ -419,7 +428,9 @@ def affected(box, level, maximum, regions, bounds):
     return False
 
 
-def build_pyramid(index_path, output, tile_size=256, overlap=1, incremental=True):
+def build_pyramid(
+    index_path, output, tile_size=256, overlap=1, incremental=True, viewer_metadata=None
+):
     validate_settings(tile_size, overlap)
     index_path, output = Path(index_path), Path(output)
     index, chunks, cells = read_index(index_path)
@@ -449,6 +460,18 @@ def build_pyramid(index_path, output, tile_size=256, overlap=1, incremental=True
         "overlap": overlap,
         "layers": layers,
     }
+    if viewer_metadata is not None:
+        settings["viewer_metadata"] = validate_metadata(viewer_metadata)
+        if (
+            type(index.get("ai_styling")) is not bool
+            or index["ai_styling"] != settings["viewer_metadata"]["ai_styling"]
+        ):
+            raise ValueError(
+                "Viewer AI styling provenance disagrees with the render index"
+            )
+        manifest_for(
+            settings["viewer_metadata"], settings, sources, identity(settings, sources)
+        )
     old = None
     if output.exists() and incremental:
         verify_pyramid(output)
@@ -540,6 +563,13 @@ def build_pyramid(index_path, output, tile_size=256, overlap=1, incremental=True
             "artwork_approved": False,
             "stats": stats,
         }
+        if "viewer_metadata" in settings:
+            metadata = settings["viewer_metadata"]
+            manifest = manifest_for(metadata, settings, sources, data["id"])
+            (staging / "manifest.json").write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+            )
+            (staging / "NOTICE.txt").write_text(metadata["notice_text"])
         data["assets"] = [
             {
                 "path": str(path.relative_to(staging)),
@@ -575,6 +605,11 @@ def main():
     parser.add_argument("--overlap", type=int, default=1)
     parser.add_argument("--full-rebuild", action="store_true")
     parser.add_argument("--verify", action="store_true")
+    parser.add_argument(
+        "--viewer-metadata",
+        type=Path,
+        help="Explicit source credits and edition for a viewer-ready release",
+    )
     args = parser.parse_args()
     if not args.verify and args.index is None:
         parser.error("--index is required unless verifying an existing pyramid")
@@ -582,7 +617,14 @@ def main():
         verify_pyramid(args.output)
         if args.verify
         else build_pyramid(
-            args.index, args.output, args.tile_size, args.overlap, not args.full_rebuild
+            args.index,
+            args.output,
+            args.tile_size,
+            args.overlap,
+            not args.full_rebuild,
+            json.loads(args.viewer_metadata.read_text())
+            if args.viewer_metadata
+            else None,
         )
     )
     print(json.dumps(result, indent=2))

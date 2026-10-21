@@ -97,3 +97,30 @@ coverage, no-op reuse, one-layer edits, removed chunks, configuration changes,
 source changes during export, corrupt outputs and protection of existing files.
 An incremental build must match a fresh full rebuild byte for byte. `just check`
 runs these alongside the atlas, renderer and job-ledger tests.
+
+## Viewer-ready chunk releases
+
+```sh
+just chunk-viewer renders/atlas-context/render-index.json renders/context-tiles
+```
+
+The optional `--viewer-metadata` input supplies explicit title, source edition,
+HTTPS attribution, geographic study bounds and a source notice. The included
+`configs/shinjuku-viewer.json` applies to this Shinjuku source study only. Use
+separate metadata for another district or dataset, rather than relabeling it.
+
+The exporter writes `manifest.json` and `NOTICE.txt` into the verified asset
+inventory. Release identity covers this metadata as well as source hashes and
+pyramid settings. Global integer pixel bounds and rendered chunk rectangles are
+preserved, including negative origins and sparse gaps. The browser validates
+paired DZI dimensions and rectangles before display. A missing chunk is distinct
+from a failed tile request and does not count as verified geographic coverage.
+
+There is no assembled full-resolution PNG in a chunk release. The viewer omits
+that download instead of promising a nonexistent file. The bounded flat-image
+adapter remains available for the original small source study. Source coverage
+and artwork approval remain false for this exporter, regardless of input claims.
+
+AI styling provenance must be an explicit boolean in both the finalized render
+index and viewer metadata, and they must agree. A metadata file for an unstyled
+source release cannot silently label AI-assisted repairs as unstyled artwork.

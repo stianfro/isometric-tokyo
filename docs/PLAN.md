@@ -72,9 +72,10 @@ Proposed defaults, to validate in the first milestones:
 - Keep Python and Blender for geographic preparation and offline rendering.
 - Use a versioned JSON atlas configuration and manifests. Keep render chunks,
   style patches and browser image tiles separate; their optimal sizes differ.
-- Use React, TypeScript and OpenSeadragon for the viewer, with libvips for pyramid
-  generation. Use image coordinates, not a Web Mercator map forced onto an
-  isometric image.
+- Use React, TypeScript and OpenSeadragon for the viewer. The first bounded
+  pyramid exporter uses Pillow with sparse windowed reduction and measured
+  allocation limits. Reconsider libvips after profiling district throughput. Use
+  image coordinates, not a Web Mercator map forced onto an isometric image.
 - Keep the atlas origin, camera basis and pixel scale fixed. Recenter individual
   Blender jobs for numerical precision without changing their global placement.
 - Keep raw reference imagery separate from approved artwork. Use deterministic

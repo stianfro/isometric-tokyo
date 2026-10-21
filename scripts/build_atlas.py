@@ -311,6 +311,7 @@ def build_release(source, output, config_path=None, tile_size=256):
                 "schema_version": VERSION,
                 "id": release_id,
                 "title": "Shinjuku source atlas",
+                "place": {"name": "Shinjuku", "name_ja": "新宿"},
                 "width": images[0].width,
                 "height": images[0].height,
                 "tile_size": tile_size,

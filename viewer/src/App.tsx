@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import OpenSeadragon from 'openseadragon'
-import { formatView, parseManifest, parseView, type AtlasManifest, type ViewState } from './atlas'
+import { formatView, parseManifest, parseView, resolveManifestUrl, validateDescriptor, viewportHasCoverage, type AtlasManifest, type ViewState } from './atlas'
 
-const MANIFEST_URL = new URL('atlas/manifest.json', document.baseURI).href
+const manifestConfiguration = (() => {
+  try {
+    return { url: resolveManifestUrl(import.meta.env.VITE_ATLAS_MANIFEST, document.baseURI), error: null }
+  } catch {
+    return { url: null, error: 'VITE_ATLAS_MANIFEST must be a relative file path without URL syntax, a leading slash, empty segments or dot segments. Correct the build or development configuration and restart it.' }
+  }
+})()
 
 function Icon({ name }: { name: 'plus' | 'minus' | 'home' | 'overview' | 'share' | 'info' | 'close' }) {
   const paths = {
@@ -23,8 +29,9 @@ export function App() {
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
+    if (!manifestConfiguration.url) return
     const abort = new AbortController()
-    fetch(MANIFEST_URL, { signal: abort.signal })
+    fetch(manifestConfiguration.url, { signal: abort.signal })
       .then((response) => {
         if (!response.ok) throw new Error('Atlas manifest unavailable')
         return response.json() as Promise<unknown>
@@ -34,14 +41,14 @@ export function App() {
     return () => abort.abort()
   }, [attempt])
 
-  if (!atlas) return <main className="startup">
+  if (!atlas || !manifestConfiguration.url) return <main className="startup">
     <div className="wordmark">isometric<span>.tokyo</span></div>
-    {error ? <div role="alert"><h1>The map could not load.</h1><p>The atlas is unavailable or its manifest is invalid.</p><button className="text-button" onClick={() => { setError(false); setAttempt((value) => value + 1) }}>Try again</button></div> : <p role="status">Opening Shinjuku…</p>}
+    {manifestConfiguration.error ? <div role="alert"><h1>The map configuration is invalid.</h1><p>{manifestConfiguration.error}</p></div> : error ? <div role="alert"><h1>The map could not load.</h1><p>The atlas is unavailable or its manifest is invalid.</p><button className="text-button" onClick={() => { setError(false); setAttempt((value) => value + 1) }}>Try again</button></div> : <p role="status">Opening Tokyo…</p>}
   </main>
-  return <AtlasMap atlas={atlas} />
+  return <AtlasMap atlas={atlas} manifestUrl={manifestConfiguration.url} />
 }
 
-function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
+function AtlasMap({ atlas, manifestUrl }: { atlas: AtlasManifest; manifestUrl: string }) {
   const mapElement = useRef<HTMLDivElement>(null)
   const overviewElement = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<OpenSeadragon.Viewer | null>(null)
@@ -56,9 +63,11 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
   const [message, setMessage] = useState('')
   const [zoom, setZoom] = useState(1)
   const [outside, setOutside] = useState(false)
+  const [emptyView, setEmptyView] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
   const selected = atlas.layers.find((item) => item.id === layer)!
   const imageAspect = atlas.height / atlas.width
+  const placeName = atlas.place?.name ?? atlas.title
 
   const currentView = useCallback((): ViewState | null => {
     const viewer = viewerRef.current
@@ -86,6 +95,8 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
     overviewElement.current.replaceChildren(navigatorElement)
     let active = true
     let lastReady: string | null | undefined
+    let lastEmpty: boolean | undefined
+    let sourceInvalid = false
     const desired = parseView(location.hash, atlas.layers.map((item) => item.id))
     const viewer = OpenSeadragon({
       element: mapElement.current,
@@ -122,11 +133,19 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
     }
     const initialize = () => {
       if (!active) return
-      const mismatch = atlas.layers.some((_, index) => {
-        const size = viewer.world.getItemAt(index)?.getContentSize()
-        return !size || size.x !== atlas.width || size.y !== atlas.height
-      })
-      if (mismatch) { setFailure('source'); return }
+      if (sourceInvalid) return
+      try {
+        atlas.layers.forEach((_, index) => {
+          const source = viewer.world.getItemAt(index)?.source
+          if (!(source instanceof OpenSeadragon.DziTileSource)) throw new Error('Expected a DZI source')
+          validateDescriptor(atlas, { width: source.dimensions.x, height: source.dimensions.y, tile_size: source.getTileWidth(source.maxLevel), tile_height: source.getTileHeight(source.maxLevel), overlap: source.tileOverlap, format: source.fileFormat, max_level: source.maxLevel, rectangles: source.displayRects ?? [] })
+        })
+      } catch {
+        sourceInvalid = true
+        viewer.world.removeAll()
+        setFailure('source')
+        return
+      }
       atlas.layers.forEach((item, index) => viewer.world.getItemAt(index).setOpacity(item.id === layerRef.current ? 1 : 0))
       if (desired) apply(desired)
       else {
@@ -138,18 +157,20 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
     viewer.addHandler('update-viewport', () => {
       if (!active) return
       const index = atlas.layers.findIndex((item) => item.id === layerRef.current)
-      const loaded = sourcesLoaded === atlas.layers.length && Boolean(viewer.world.getItemAt(index)?.getFullyLoaded())
+      const empty = !viewportHasCoverage(atlas, viewer.viewport.getBounds(true))
+      if (empty !== lastEmpty) { lastEmpty = empty; setEmptyView(empty) }
+      const loaded = !sourceInvalid && sourcesLoaded === atlas.layers.length && (empty || Boolean(viewer.world.getItemAt(index)?.getFullyLoaded()))
       const readiness = loaded ? layerRef.current : null
       if (readiness !== lastReady) { lastReady = readiness; setLoadedLayer(readiness) }
     })
     viewer.addHandler('open-failed', () => { if (active) setFailure('source') })
-    viewer.addHandler('tile-load-failed', () => { if (active) setFailure('tile') })
+    viewer.addHandler('tile-load-failed', () => { if (active && !sourceInvalid) setFailure('tile') })
     viewer.addHandler('animation-finish', saveView)
     viewer.addHandler('resize', saveView)
     window.addEventListener('hashchange', syncHash)
     let sourcesLoaded = 0
     atlas.layers.forEach((item, index) => viewer.addTiledImage({
-      tileSource: new URL(item.dzi, MANIFEST_URL).href,
+      tileSource: new URL(item.dzi, manifestUrl).href,
       opacity: (desired?.layer ?? atlas.layers[0].id) === item.id ? 1 : 0,
       x: 0, y: 0, width: 1, index,
       success: () => { sourcesLoaded += 1; if (sourcesLoaded === atlas.layers.length) initialize() },
@@ -161,7 +182,7 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
       viewer.destroy()
       viewerRef.current = null
     }
-  }, [atlas, imageAspect, retry, saveView])
+  }, [atlas, imageAspect, manifestUrl, retry, saveView])
 
   useEffect(() => {
     layerRef.current = layer
@@ -217,7 +238,7 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
   }
 
   return <main className="atlas-shell">
-    <div ref={mapElement} className="map-canvas" aria-label="Shinjuku interactive map" role="region" tabIndex={0} onKeyDownCapture={keyboard} aria-describedby="map-help" data-ready={ready} data-layer={layer} />
+    <div ref={mapElement} className="map-canvas" aria-label={`${placeName} interactive map`} role="region" tabIndex={0} onKeyDownCapture={keyboard} aria-describedby="map-help" data-ready={ready} data-layer={layer} data-coverage={emptyView ? 'empty' : 'available'} />
     <header className="masthead">
       <a className="brand" href={location.pathname} aria-label="isometric.tokyo, reset map">
         <span className="brand-glyph" lang="ja" aria-hidden="true">東京</span>
@@ -228,14 +249,14 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
     </header>
 
     <section className="place-label" aria-label="Current coverage">
-      <div className="place-japanese" lang="ja">新宿</div>
-      <h1>Shinjuku</h1>
+      <div className="place-japanese" lang="ja">{atlas.place?.name_ja ?? '東京'}</div>
+      <h1>{placeName}</h1>
       <p>Tokyo, block by block.</p>
       <span className="coverage-label">{atlas.coverage.label}</span>
     </section>
 
     <div className="layer-control" role="group" aria-label="Map layers">
-      {atlas.layers.map((item) => <button key={item.id} aria-pressed={layer === item.id} onClick={() => setLayer(item.id)}>{item.label}</button>)}
+      {atlas.layers.length > 3 ? <label className="layer-select">Map layer<select value={layer} onChange={(event) => setLayer(event.target.value)}>{atlas.layers.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label> : atlas.layers.map((item) => <button key={item.id} aria-pressed={layer === item.id} onClick={() => setLayer(item.id)}>{item.label}</button>)}
     </div>
 
     <nav className="map-controls" aria-label="Map navigation">
@@ -248,10 +269,11 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
     </nav>
 
     <aside className={`overview ${overview ? '' : 'is-hidden'}`} aria-label="Overview map" aria-hidden={!overview}>
-      <div className="overview-label">SHINJUKU <span>OVERVIEW</span></div>
+      <div className="overview-label">{placeName.toUpperCase()} <span>OVERVIEW</span></div>
       <div id="atlas-overview" ref={overviewElement} />
     </aside>
 
+    {emptyView && ready && !failure && <div className="map-notice coverage-empty" role="status">No rendered chunks in this view. Pan back to available imagery.</div>}
     {!ready && !failure && <div className="map-notice loading" role="status">Loading map tiles…</div>}
     {failure && <div className="map-notice failure" role="alert"><strong>{failure === 'source' ? 'This map layer could not open.' : 'Some map tiles could not load.'}</strong><span>{failure === 'source' ? 'The image source is missing or does not match the atlas.' : 'The missing imagery is a loading failure, not empty city.'}</span><button onClick={() => { setLoadedLayer(null); setFailure(null); setRetry((value) => value + 1) }}>Retry map</button></div>}
     {message && <div className="map-notice toast" role="status">{message}</div>}
@@ -261,21 +283,21 @@ function AtlasMap({ atlas }: { atlas: AtlasManifest }) {
       <p id="map-help">Drag to explore <span>·</span> Scroll or pinch to zoom <span>·</span> Focus map for arrow keys</p>
       <button className="credit-button" onClick={() => setInfo(true)}>Data & credits ↗</button>
     </footer>
-    <div className="coverage-note">{outside ? 'Outside the image: no additional coverage yet.' : 'Limited Shinjuku coverage. Not a navigation map.'}</div>
+    <div className="coverage-note">{emptyView ? 'Outside available rendered coverage.' : atlas.coverage.rectangles_px ? 'Chunked source atlas. Transparent gaps are unrendered.' : outside ? 'Outside the image: no additional coverage yet.' : 'Limited source coverage. Not a navigation map.'}</div>
 
     <dialog ref={dialog} className="info-dialog" aria-labelledby="about-title" onCancel={() => setInfo(false)} onClick={(event) => { if (event.target === dialog.current) setInfo(false) }}>
       <div className="dialog-header"><span className="eyebrow">THE SOURCE ATLAS</span><button className="icon-button" aria-label="Close map information" onClick={() => setInfo(false)}><Icon name="close" /></button></div>
       <h2 id="about-title">A first piece of Tokyo.</h2>
       <p>This is a small, explorable source study for an illustrated map of Tokyo. It is not the finished city map.</p>
-      <dl><div><dt>Coverage</dt><dd>{atlas.coverage.label}</dd></div><div><dt>Source edition</dt><dd>{atlas.source_edition}</dd></div><div><dt>Atlas</dt><dd>{atlas.id}</dd></div><div><dt>AI styling</dt><dd>{atlas.ai_styling ? 'Applied. Compare against source imagery.' : 'None. These are direct 3D source renders.'}</dd></div></dl>
+      <dl><div><dt>Coverage</dt><dd>{atlas.coverage.label}</dd></div><div><dt>Source edition</dt><dd>{atlas.source_edition}</dd></div><div><dt>Atlas</dt><dd>{atlas.id}</dd></div><div><dt>AI styling</dt><dd>{atlas.ai_styling ? 'Applied. Compare against source imagery.' : 'None. These are direct 3D source renders.'}</dd></div>{atlas.bounds_px && <div><dt>Atlas pixel bounds</dt><dd>{atlas.bounds_px.join(', ')}</dd></div>}{atlas.source_coverage_verified !== undefined && <div><dt>Source completeness</dt><dd>{atlas.source_coverage_verified ? 'Verified for this release.' : 'Not verified. Rendered bounds do not prove complete geographic data.'}</dd></div>}{atlas.artwork_approved !== undefined && <div><dt>Artwork approval</dt><dd>{atlas.artwork_approved ? 'Approved for this release.' : 'Not approved. This is a source or working release.'}</dd></div>}</dl>
       <h3>Read the gaps, too.</h3>
-      <p>White buildings can indicate missing textures or lower-detail geometry. Trees mostly appear in ground photography. The original sample has cropped edges, mixed building detail and alignment limitations. It is not a live map or a navigation aid.</p>
+      <p>White buildings can indicate missing textures or lower-detail geometry. Trees mostly appear in ground photography. Source datasets can have mixed building detail, acquisition dates and alignment limitations. It is not a live map or a navigation aid.</p>
       <p>{atlas.limitations}</p>
       <p>{atlas.modifications ?? "Independent project. No source-provider endorsement."}</p>
       <h3>Source credits</h3>
       <ul>{atlas.attribution.map((credit) => <li key={credit.url}><a href={credit.url} target="_blank" rel="noreferrer">{credit.label} ↗</a></li>)}</ul>
-      {atlas.notice && <p><a href={new URL(atlas.notice, MANIFEST_URL).href} target="_blank" rel="noreferrer">Full source terms and modification notice ↗</a></p>}
-      <a className="download-link" href={new URL(selected.original, MANIFEST_URL).href} download>Download {selected.label.toLowerCase()} PNG ↓</a>
+      {atlas.notice && <p><a href={new URL(atlas.notice, manifestUrl).href} target="_blank" rel="noreferrer">Full source terms and modification notice ↗</a></p>}
+      {selected.original ? <a className="download-link" href={new URL(selected.original, manifestUrl).href} download>Download {selected.label.toLowerCase()} PNG ↓</a> : <p>Original images are retained per render chunk. This layer has no single-image download.</p>}
       <p className="dialog-help">Keyboard: arrow keys pan; + and − zoom; Home or 0 resets. Shared links preserve the image position, zoom and selected layer.</p>
     </dialog>
   </main>

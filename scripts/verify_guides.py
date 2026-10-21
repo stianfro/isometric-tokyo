@@ -9,6 +9,7 @@ from array import array
 from pathlib import Path
 
 from PIL import Image
+from render_context import SEMANTIC_IDS
 
 PNG_GUIDES = {"feature-id", "semantic", "silhouette", "normal-preview", "depth-preview"}
 BINARY_GUIDES = {"depth": 1, "normal": 3}
@@ -41,6 +42,11 @@ def verify_guides(index: dict, root: Path, *, compare_reference=False):
         )
     frames = index["chunks"] + ([index["reference"]] if index.get("reference") else [])
     building_pixels = 0
+    semantic_counts = {kind: 0 for kind in SEMANTIC_IDS}
+    feature_kinds = {
+        item["id"]: item.get("semantic_kind", item["kind"])
+        for item in registry["records"]
+    }
     for frame in frames:
         guides = frame.get("guides", {})
         if set(guides) != PNG_GUIDES | set(BINARY_GUIDES):
@@ -84,12 +90,22 @@ def verify_guides(index: dict, root: Path, *, compare_reference=False):
         for pixel, semantic in enumerate(loaded["semantic"]):
             red, green, blue = loaded["feature-id"][pixel]
             feature = red * 65536 + green * 256 + blue
-            if feature not in identifiers or semantic not in (0, 1, 2):
+            if feature not in identifiers or semantic not in SEMANTIC_IDS.values():
                 raise ValueError("Guide contains an unknown feature or semantic ID")
             if (semantic == 0) != (feature == 0) or (semantic == 1) != (feature == 1):
                 raise ValueError(
                     "Guide feature ID disagrees with its semantic category"
                 )
+            kind = feature_kinds[feature]
+            expected_kind = "building" if kind == "synthetic-object" else kind
+            if (
+                expected_kind not in SEMANTIC_IDS
+                or SEMANTIC_IDS[expected_kind] != semantic
+            ):
+                raise ValueError(
+                    "Source feature kind disagrees with its semantic category"
+                )
+            semantic_counts[expected_kind] += 1
             if loaded["silhouette"][pixel] != (255 if semantic == 2 else 0):
                 raise ValueError("Building silhouette disagrees with semantic guide")
             normal = loaded["normal"][pixel * 3 : pixel * 3 + 3]
@@ -111,6 +127,8 @@ def verify_guides(index: dict, root: Path, *, compare_reference=False):
         "building_pixel_samples": building_pixels,
         "source_coverage_verified": False,
         "artifacts_valid": True,
+        "pixel_samples_by_semantic": semantic_counts,
+        "source_feature_counts": metadata.get("source_feature_counts", {}),
     }
     if not building_pixels:
         raise ValueError("No building pixels were sampled in guide artifacts")

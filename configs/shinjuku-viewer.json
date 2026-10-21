@@ -1,0 +1,43 @@
+{
+  "title": "Shinjuku chunked source atlas",
+  "place": {
+    "name": "Shinjuku",
+    "name_ja": "新宿"
+  },
+  "attribution": [
+    {
+      "label": "Tokyo Metropolitan Government / Project PLATEAU, Shinjuku FY2025",
+      "url": "https://www.geospatial.jp/ckan/dataset/plateau-13104-shinjuku-ku-2025"
+    },
+    {
+      "label": "PLATEAU-Ortho 2023",
+      "url": "https://docs.plateauview.mlit.go.jp/datasets/ortho/"
+    },
+    {
+      "label": "Terrain: PLATEAU | Mapterhorn | 国土地理院",
+      "url": "https://docs.plateauview.mlit.go.jp/datasets/terrain/"
+    },
+    {
+      "label": "Source terms and modified-content notice",
+      "url": "https://www.mlit.go.jp/plateau/site-policy/"
+    }
+  ],
+  "coverage": {
+    "label": "Western Shinjuku source study; rendered pixel coverage is shown separately",
+    "bbox": [
+      139.6873,
+      35.686,
+      139.6961,
+      35.6932
+    ]
+  },
+  "source_edition": "Shinjuku FY2025; PLATEAU-Ortho 2023",
+  "ai_styling": false,
+  "modifications": "Selected and transformed source geometry, rendered on a shared pixel grid. Geometry comparison replaces materials. Independent project, no endorsement.",
+  "limitations": "Incomplete source coverage, mixed LOD and capture dates. Roads and water are included only when recorded in the render source inputs. Missing vegetation is not a verified empty area. No final art approval.",
+  "layer_labels": {
+    "textured": "Source textures",
+    "geometry": "Geometry only"
+  },
+  "notice_text": "# Geographic data and preview notices\n\nThe original project code is licensed under the [MIT License](LICENSE).\nGeographic data and derived previews are not covered by that licence; the MIT\nLicense does not replace the source terms below.\n\n## Attribution for previews\n\nThe images in `previews/` are derived renderings from:\n\n- Tokyo Metropolitan Government / Project PLATEAU, Shinjuku FY2025 city model.\n- MLIT Project PLATEAU, PLATEAU-Ortho 2023.\n- Terrain: **PLATEAU | Mapterhorn | 国土地理院**.\n\nThis project selected, transformed, cropped and rendered the source data.\nBuilding textures are retained; the geometry comparison replaces materials.\nThe renders have no AI styling. Embedded source credits accompany the images.\nThis is an independent project, not an official MLIT, Tokyo Metropolitan\nGovernment or Project PLATEAU product or endorsement.\n\n## Buildings\n\nThe [Shinjuku FY2025 catalog](https://www.geospatial.jp/ckan/dataset/plateau-13104-shinjuku-ku-2025)\npermits reproduction, public transmission, transformation and commercial use.\nThe original dataset README offers [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)\nas a selectable licence. Use the building data under that licence, preserve\nsource credit and identify modifications. The local download manifest records\nthe exact source URLs, checksums and selection bounds.\n\n## Orthophotography and terrain\n\n[PLATEAU-Ortho documentation](https://docs.plateauview.mlit.go.jp/datasets/ortho/)\ndescribes reuse under CC BY 4.0-compatible terms. The source can combine PLATEAU\nand Geospatial Information Authority of Japan imagery.\n\n[PLATEAU terrain documentation](https://docs.plateauview.mlit.go.jp/datasets/terrain/)\nspecifies the credit **PLATEAU | Mapterhorn | 国土地理院**. Preserve that credit\nwhen displaying or redistributing the terrain or derived renderings.\n\nConsult the [PLATEAU policy](https://www.mlit.go.jp/plateau/site-policy/)\nand dataset-specific notices for attribution, modified-content notices and any\nthird-party conditions. CC licensing does not grant unrelated trademark,\nprivacy or other rights. Surveying uses may have separate Survey Act requirements.\n\nThe FY2025 building edition and 2023 orthophoto service label are not guarantees\nof a uniform capture date. See [the study notes](README.txt) for source history.\n\nRaw downloads, packed Blender projects and local source-kit archives are excluded\nfrom this repository. This exclusion reduces repository size; it does not remove\nattribution obligations from the previews or make source data private.\n"
+}

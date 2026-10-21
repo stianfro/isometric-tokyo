@@ -19,6 +19,7 @@ from atlas import validate_bounds
 from fetch_sample import unpack_b3dm
 from geo import local_point
 from gltf_compat import remove_external_rtc
+from render_context import CONTEXT_SEMANTICS, SEMANTIC_IDS
 
 MAX_FEATURE_ID = 2**24 - 1
 
@@ -41,37 +42,40 @@ def triangle_feature_id(batch_values, batch_feature_ids):
     if len(batch_values) != 3 or any(type(value) is not int for value in batch_values):
         raise ValueError("Triangle batch IDs must be three integers")
     if len(set(batch_values)) != 1:
-        raise ValueError("A triangle crosses source building IDs")
+        raise ValueError("A triangle crosses source feature IDs")
     batch_id = batch_values[0]
     if not 0 <= batch_id < len(batch_feature_ids):
         raise ValueError("Triangle batch ID is outside its source feature table")
     return batch_feature_ids[batch_id]
 
 
-def feature_registry(tables):
+def feature_registry(tables, tile_semantics=None):
     """Create one release-wide registry before planning or rendering any chunks.
 
     Numeric IDs are release-local. The gml_id is the durable identity, retained
     unchanged in the sidecar when source selection expands in a later release.
+    Semantic kinds keep unrelated CityGML feature classes distinct.
     """
-    buildings = {}
-    for table in tables.values():
+    tile_semantics = tile_semantics or {key: "building" for key in tables}
+    features = {}
+    for tile_hash, table in tables.items():
+        kind = tile_semantics[tile_hash]
+        if kind not in SEMANTIC_IDS or kind in ("background", "ground"):
+            raise ValueError("Unknown source feature semantic kind")
         for record in table:
             identity = record.get("gml_id")
             if not isinstance(identity, str) or not identity:
                 raise ValueError("Source feature record lacks a genuine gml_id")
-            if identity in buildings and buildings[identity] != record:
+            key = (kind, identity)
+            if key in features and features[key] != record:
                 raise ValueError("Conflicting metadata for the same source gml_id")
-            buildings[identity] = record
-    records = [
-        {"id": 0, "kind": "background"},
-        {"id": 1, "kind": "ground"},
-    ]
+            features[key] = record
+    records = [{"id": 0, "kind": "background"}, {"id": 1, "kind": "ground"}]
     lookup = {}
-    for identity in sorted(buildings):
+    for key in sorted(features):
         number = len(records)
-        lookup[identity] = number
-        records.append({"id": number, "kind": "building", **buildings[identity]})
+        lookup[key] = number
+        records.append({**features[key], "id": number, "kind": key[0]})
     unresolved_tiles = {}
     for tile_hash in sorted(tables):
         number = len(records)
@@ -80,6 +84,7 @@ def feature_registry(tables):
             {
                 "id": number,
                 "kind": "unresolved-source-tile",
+                "semantic_kind": tile_semantics[tile_hash],
                 "source_tile_sha256": tile_hash,
             }
         )
@@ -87,53 +92,81 @@ def feature_registry(tables):
         raise ValueError("Feature registry exceeds 24-bit PNG capacity")
     return {
         "schema_version": 1,
-        "identity_scope": "Numeric IDs are release-local; gml_id retains the source identity across releases",
+        "identity_scope": "Numeric IDs are release-local; semantic kind and gml_id retain the source identity across releases",
         "background_id": 0,
         "ground_id": 1,
         "records": records,
         "tile_batch_feature_ids": {
-            key: [lookup[item["gml_id"]] for item in value]
+            key: [lookup[(tile_semantics[key], item["gml_id"])] for item in value]
             for key, value in tables.items()
         },
         "unresolved_tile_feature_ids": unresolved_tiles,
     }
 
 
-def source_registry(manifest_path: Path):
-    """Match original b3dm tables to exact imported GLB payloads, without network."""
-    manifest = json.loads(manifest_path.read_text())
-    tables, hashes = {}, {}
-    for number, tile in enumerate(manifest["tiles"]):
-        glb = (manifest_path.parent / tile["glb_path"]).read_bytes()
-        tile_hash = hashlib.sha256(remove_external_rtc(glb)).hexdigest()
-        records = []
-        source_path = manifest_path.parent / tile["path"]
-        if source_path.suffix.lower() == ".b3dm":
-            payload = source_path.read_bytes()
-            digest = hashlib.sha256(payload).hexdigest()
-            if digest != tile["sha256"]:
-                raise ValueError("Original b3dm checksum mismatch")
-            embedded, feature, batch = unpack_b3dm(payload)
-            if embedded != glb:
-                raise ValueError("Original b3dm GLB does not match the imported GLB")
-            identifiers = batch.get("gml_id")
-            if identifiers is not None:
-                if not isinstance(identifiers, list) or len(identifiers) != feature.get(
-                    "BATCH_LENGTH"
-                ):
-                    raise ValueError("Source gml_id count does not match BATCH_LENGTH")
-                official_ids = batch.get(
-                    "uro:BuildingIDAttribute_uro:buildingID", [None] * len(identifiers)
+def source_registry(manifest_path: Path, *, context_path: Path | None = None):
+    """Match original b3dm tables to exact imported GLBs, without network."""
+    tables, hashes, semantics = {}, {}, {}
+    sources = [(manifest_path, "building")]
+    if context_path is not None:
+        sources.append((context_path, "context"))
+    for path, source_kind in sources:
+        manifest = json.loads(path.read_text())
+        for number, tile in enumerate(manifest["tiles"]):
+            kind = (
+                "building"
+                if source_kind == "building"
+                else CONTEXT_SEMANTICS[tile["context_type"]]
+            )
+            glb = (path.parent / tile["glb_path"]).read_bytes()
+            tile_hash = hashlib.sha256(remove_external_rtc(glb)).hexdigest()
+            records = []
+            source_path = path.parent / tile["path"]
+            if source_path.suffix.lower() == ".b3dm":
+                payload = source_path.read_bytes()
+                digest = hashlib.sha256(payload).hexdigest()
+                if digest != tile["sha256"]:
+                    raise ValueError("Original b3dm checksum mismatch")
+                embedded, feature, batch = unpack_b3dm(payload)
+                if embedded != glb:
+                    raise ValueError(
+                        "Original b3dm GLB does not match the imported GLB"
+                    )
+                identifiers = batch.get("gml_id")
+                if identifiers is not None:
+                    if not isinstance(identifiers, list) or len(
+                        identifiers
+                    ) != feature.get("BATCH_LENGTH"):
+                        raise ValueError(
+                            "Source gml_id count does not match BATCH_LENGTH"
+                        )
+                    official_ids = batch.get(
+                        "uro:BuildingIDAttribute_uro:buildingID",
+                        [None] * len(identifiers),
+                    )
+                    if len(official_ids) != len(identifiers):
+                        raise ValueError(
+                            "Source building-ID column has the wrong length"
+                        )
+                    records = [
+                        {"gml_id": identity, "source_building_id": official_ids[index]}
+                        if kind == "building"
+                        else {
+                            "gml_id": identity,
+                            "source_item_id": tile["source_item_id"],
+                        }
+                        for index, identity in enumerate(identifiers)
+                    ]
+                hashes[f"{source_kind}-b3dm-{number}"] = digest
+            if tile_hash in tables and (
+                tables[tile_hash] != records or semantics[tile_hash] != kind
+            ):
+                raise ValueError(
+                    "One GLB content hash has conflicting source feature tables"
                 )
-                if len(official_ids) != len(identifiers):
-                    raise ValueError("Source building-ID column has the wrong length")
-                records = [
-                    {"gml_id": identity, "source_building_id": official_ids[index]}
-                    for index, identity in enumerate(identifiers)
-                ]
-            hashes[f"building-b3dm-{number}"] = digest
-        tables[tile_hash] = records
-    return feature_registry(tables), hashes
+            tables[tile_hash] = records
+            semantics[tile_hash] = kind
+    return feature_registry(tables, semantics), hashes
 
 
 def canonical_depth_range(config):
@@ -234,14 +267,17 @@ def build_guide_scene(objects, config, registry):
     from mathutils.bvhtree import BVHTree
 
     vertices, triangles, feature_ids, semantic_ids = [], [], [], []
-    resolved_meshes, unresolved_meshes = 0, 0
+    resolved = {
+        kind: 0 for kind in SEMANTIC_IDS if kind not in ("background", "ground")
+    }
+    unresolved = dict(resolved)
     for obj in objects:
         if obj.type != "MESH":
             continue
         kind = obj.get("atlas_semantic")
-        if kind not in ("ground", "building"):
+        if kind not in SEMANTIC_IDS or kind == "background":
             raise ValueError(
-                "Every guide mesh must explicitly identify building or ground semantics"
+                "Every guide mesh must explicitly identify its source semantic kind"
             )
         offset = len(vertices)
         vertices.extend(
@@ -252,20 +288,20 @@ def build_guide_scene(objects, config, registry):
         batch_attribute = obj.data.attributes.get("_BATCHID")
         batch_ids = None
         batch_feature_ids = registry["tile_batch_feature_ids"].get(tile_hash, [])
-        if kind == "building" and batch_attribute is not None and batch_feature_ids:
+        if kind != "ground" and batch_attribute is not None and batch_feature_ids:
             if batch_attribute.domain != "POINT" or batch_attribute.data_type != "INT":
                 raise ValueError("Source _BATCHID must be a POINT integer attribute")
             batch_ids = np.empty(len(batch_attribute.data), dtype=np.int32)
             batch_attribute.data.foreach_get("value", batch_ids)
             if len(batch_ids) != len(obj.data.vertices):
                 raise ValueError("Source _BATCHID count does not match mesh vertices")
-            resolved_meshes += 1
-        elif kind == "building" and "atlas_fixture_feature_id" not in obj:
-            unresolved_meshes += 1
+            resolved[kind] += 1
+        elif kind != "ground" and "atlas_fixture_feature_id" not in obj:
+            unresolved[kind] += 1
         for triangle in obj.data.loop_triangles:
             vertex_ids = tuple(triangle.vertices)
             triangles.append(tuple(offset + vertex for vertex in vertex_ids))
-            semantic_ids.append(1 if kind == "ground" else 2)
+            semantic_ids.append(SEMANTIC_IDS[kind])
             if kind == "ground":
                 feature_ids.append(1)
             elif "atlas_fixture_feature_id" in obj:
@@ -304,8 +340,10 @@ def build_guide_scene(objects, config, registry):
         "origin_depth_m": origin_depth,
         "ray_length_m": far - origin_depth + 100,
         "depth_range_m": [near, far],
-        "resolved_building_meshes": resolved_meshes,
-        "unresolved_building_meshes": unresolved_meshes,
+        "resolved_building_meshes": resolved["building"],
+        "unresolved_building_meshes": unresolved["building"],
+        "resolved_meshes_by_semantic": resolved,
+        "unresolved_meshes_by_semantic": unresolved,
         "triangle_count": len(triangles),
     }
 
@@ -409,9 +447,9 @@ def guide_metadata(guide_scene, registry, registry_path, registry_sha256):
         },
         "semantic": {
             "png": "8-bit grayscale category",
-            "categories": {"0": "background", "1": "ground", "2": "building"},
+            "categories": {str(number): kind for kind, number in SEMANTIC_IDS.items()},
         },
-        "silhouette": "255 for building pixels, 0 for ground/background",
+        "silhouette": "255 for building pixels, 0 for every other category",
         "depth": {
             "format": "Row-major little-endian float32 metres",
             "definition": "dot(hit - (atlas.camera_target_enu + atlas.camera_offset_enu), camera_forward_enu)",
@@ -432,5 +470,12 @@ def guide_metadata(guide_scene, registry, registry_path, registry_sha256):
         "source_building_registry_count": sum(
             item["kind"] == "building" for item in registry["records"]
         ),
+        "source_feature_counts": {
+            kind: sum(item["kind"] == kind for item in registry["records"])
+            for kind in SEMANTIC_IDS
+            if kind not in ("background", "ground")
+        },
+        "resolved_meshes_by_semantic": guide_scene["resolved_meshes_by_semantic"],
+        "unresolved_meshes_by_semantic": guide_scene["unresolved_meshes_by_semantic"],
         "triangle_count": guide_scene["triangle_count"],
     }

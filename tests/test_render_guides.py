@@ -235,13 +235,26 @@ class GuideArtifactVerificationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             index = self.make_artifacts(root)
-            write_png(root / "semantic.png", (2, 1), bytes([0, 3]), channels=1)
+            write_png(root / "semantic.png", (2, 1), bytes([0, 6]), channels=1)
             with self.assertRaisesRegex(ValueError, "checksum"):
                 verify_guides(index, root)
             index["chunks"][0]["guides"]["semantic"]["sha256"] = hashlib.sha256(
                 (root / "semantic.png").read_bytes()
             ).hexdigest()
             with self.assertRaisesRegex(ValueError, "unknown"):
+                verify_guides(index, root)
+
+    def test_verifier_rejects_valid_category_for_wrong_source_kind(self):
+        from verify_guides import verify_guides
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            index = self.make_artifacts(root)
+            write_png(root / "semantic.png", (2, 1), bytes([0, 3]), channels=1)
+            index["chunks"][0]["guides"]["semantic"]["sha256"] = hashlib.sha256(
+                (root / "semantic.png").read_bytes()
+            ).hexdigest()
+            with self.assertRaisesRegex(ValueError, "Source feature kind"):
                 verify_guides(index, root)
 
     def test_verifier_rejects_nonfinite_depth(self):

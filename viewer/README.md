@@ -9,6 +9,21 @@ atlas, run the viewer, and run checks. The generated atlas belongs under
 `public/atlas/`; it is not part of the application source. Dependency versions
 are pinned in `package-lock.json`, and the npm cache is project-local.
 
+## Selecting a release
+
+The default manifest is `atlas/manifest.json`, relative to the application URL.
+Set `VITE_ATLAS_MANIFEST=chunks/current/manifest.json` before starting development
+or building to select a generated chunk release instead. This is build-time
+configuration, not a URL parameter. Restart development or rebuild after changing
+it. The repository's chunk-viewer tasks set this value for their generated output.
+
+The override must be a nonempty relative file path below the application directory.
+Remote URLs, leading slashes, traversal, dot segments, encoded characters and URL
+query/fragment syntax are rejected. An invalid value shows a configuration error
+at startup and makes no atlas request. An unset value uses the default; an empty
+value is an error. DZI files, source notices and optional image downloads remain
+relative to the selected manifest, not to the original sample directory.
+
 ## Manifest contract
 
 `public/atlas/manifest.json` describes one release. The parser requires schema
@@ -62,3 +77,43 @@ Reduced-motion preferences remove map animation.
 
 Browser tests use the full Chromium channel. Emulation is not a substitute for
 benchmarking a physical phone, and these tests do not claim citywide performance.
+
+## Renderer-chunk pyramids
+
+The same viewer accepts a sparse export from the chunk renderer, not only the
+original flat sample. A chunk export still needs a viewer `manifest.json` with
+explicit source attribution, edition and limitations. `pyramid-index.json` by
+itself is an exporter integrity index, not a public map manifest and does not
+supply those source notices.
+
+Chunk manifests add:
+
+- `bounds_px: [x0, y0, x1, y1]`: signed global atlas-pixel bounds. Their width and
+  height must equal the local DZI image dimensions.
+- `coverage.rectangles_px`: the nonempty list of rendered chunk rectangles in the
+  same global pixel frame. Each rectangle must fit within `bounds_px`. These are
+  rendered-image extents, not proof of complete geographic source data.
+- Optional `place: {name, name_ja}` for the visible location label. Without it,
+  the manifest title is used rather than assuming every fixture is Shinjuku.
+- Optional boolean `source_coverage_verified` and `artwork_approved` fields. False
+  is displayed as unverified or unapproved, not inferred from available imagery.
+- Layer `original` is optional. Omit it when originals remain separate render
+  chunks; the viewer does not invent a whole-image download link.
+
+DZI `DisplayRect` coordinates are local: subtract the global atlas origin from
+each recorded chunk rectangle. The viewer checks descriptor dimensions, format,
+tile size, overlap, levels and rectangles against the manifest for every layer.
+A shifted or differently covered comparison layer is rejected. The standard DZI
+sparse-tile logic decides which tile requests exist. Empty rendered coverage has
+its own message and finishes loading; an actual failed tile remains an error.
+
+URL x/y remain normalized to the local exported image, including for negative or
+nonzero global origins and nonsquare exports. `imageToAtlas` and `atlasToImage`
+provide the explicit conversion. These are image-grid coordinates, not latitude
+and longitude and not an inverse from arbitrary roof pixels to ground locations.
+
+Browser interoperability fixtures call the actual Python chunk exporter with two
+small synthetic chunks, signed global offsets, paired layers and an intentional
+missing grid cell. Set `PYTHON` to the Python environment containing the root
+project requirements when running browser tests. Fixture output stays under the
+project's `.cache/`; it never changes the active public atlas or source data.

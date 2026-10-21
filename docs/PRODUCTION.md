@@ -88,3 +88,18 @@ also retains index and numeric metadata artifacts for integrity checks.
 
 Batch tests simulate interruption, failure, retry, source changes, stale output
 and unrelated queued work. Blender seam fixtures test the actual renderer.
+
+## Optional source context
+
+Pass `--context data/context/manifest.json` to `just atlas-batch` after fetching
+context. Original b3dm, extracted GLB and source-table hashes enter each job's
+identity. A changed or corrupt context asset cannot silently reuse a completed
+job. The renderer preserves source elevations and reports road/water separation
+from terrain without applying an invented offset.
+
+## Repair review
+
+Bounded seam regions and immutable manual repair candidates are documented in
+[REPAIR.md](REPAIR.md). Repair approval checks approved dependency states and
+artifact hashes through the full dependency chain, not only the edited image.
+Review decisions are never inferred from a completed render or test run.

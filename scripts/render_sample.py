@@ -61,6 +61,7 @@ def import_tiles(manifest_path, data, lon, lat):
             if obj.type == "MESH":
                 obj["source_tile_content_sha256"] = hashlib.sha256(payload).hexdigest()
                 obj["source_building_ids_preserved"] = False
+                obj["source_context_type"] = tile.get("context_type", "bldg")
                 imported.append(obj)
         print("Imported", path.name, "meshes", len(imported), flush=True)
     return imported

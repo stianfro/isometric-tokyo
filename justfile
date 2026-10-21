@@ -18,15 +18,15 @@ terrain:
 lint: python-lint viewer-lint review-lint
 
 python-lint:
-    UV_CACHE_DIR=.cache/uv UV_TOOL_DIR=.cache/uv-tools uvx ruff@0.17.1 check scripts tests
-    UV_CACHE_DIR=.cache/uv UV_TOOL_DIR=.cache/uv-tools uvx ruff@0.17.1 format --check scripts tests
-    {{python}} -m compileall -q scripts tests
+    UV_CACHE_DIR=.cache/uv UV_TOOL_DIR=.cache/uv-tools uvx ruff@0.17.1 check scripts tests viewer/e2e
+    UV_CACHE_DIR=.cache/uv UV_TOOL_DIR=.cache/uv-tools uvx ruff@0.17.1 format --check scripts tests viewer/e2e
+    {{python}} -m compileall -q scripts tests viewer/e2e
 
 format:
-    UV_CACHE_DIR=.cache/uv UV_TOOL_DIR=.cache/uv-tools uvx ruff@0.17.1 format scripts tests
+    UV_CACHE_DIR=.cache/uv UV_TOOL_DIR=.cache/uv-tools uvx ruff@0.17.1 format scripts tests viewer/e2e
 
 fix:
-    UV_CACHE_DIR=.cache/uv UV_TOOL_DIR=.cache/uv-tools uvx ruff@0.17.1 check --fix scripts tests
+    UV_CACHE_DIR=.cache/uv UV_TOOL_DIR=.cache/uv-tools uvx ruff@0.17.1 check --fix scripts tests viewer/e2e
     just format
 
 test: python-test viewer-test review-test
@@ -84,7 +84,7 @@ viewer-build: tiles
     cd viewer && npm run build
 
 viewer-e2e: tiles
-    cd viewer && PLAYWRIGHT_BROWSERS_PATH=../.cache/playwright npm run test:e2e
+    export PYTHON="$({{python}} -c 'import sys; print(sys.executable)')"; cd viewer && PLAYWRIGHT_BROWSERS_PATH=../.cache/playwright npm run test:e2e
 
 # Full loaded source meshes are retained for every pixel-aligned chunk.
 atlas-render destination="renders/atlas-shinjuku": atlas-validate
@@ -158,3 +158,24 @@ context-preflight:
 style-pilot destination="renders/style-pilot":
     blender --background --factory-startup --python-exit-code 1 --python scripts/render_style_pilot.py -- render --config configs/shinjuku.json --manifest data/sample/manifest.json --ground data/ground/manifest.json --terrain data/terrain/mesh.json --output "{{destination}}"
     {{python}} scripts/render_style_pilot.py finalize --output "{{destination}}"
+
+review-region *args:
+    {{python}} scripts/review_regions.py {{args}}
+
+chunk-viewer index output metadata="configs/shinjuku-viewer.json":
+    {{python}} scripts/chunk_pyramid.py --index "{{index}}" --output "{{output}}" --viewer-metadata "{{metadata}}"
+
+atlas-render-context destination="renders/atlas-context": atlas-validate
+    blender --background --factory-startup --python-exit-code 1 --python scripts/render_atlas.py -- --config configs/shinjuku.json --manifest data/sample/manifest.json --ground data/ground/manifest.json --terrain data/terrain/mesh.json --context data/context/manifest.json --guides --output "{{destination}}"
+    {{python}} scripts/render_geometry.py finalize --index "{{destination}}/render-index.json"
+
+viewer-dev-chunks index metadata="configs/shinjuku-viewer.json":
+    just chunk-viewer "{{index}}" viewer/public/chunks/current "{{metadata}}"
+    cd viewer && VITE_ATLAS_MANIFEST=chunks/current/manifest.json npm run dev
+
+viewer-build-chunks index metadata="configs/shinjuku-viewer.json":
+    just chunk-viewer "{{index}}" viewer/public/chunks/current "{{metadata}}"
+    cd viewer && VITE_ATLAS_MANIFEST=chunks/current/manifest.json npm run build
+
+repair-release *args:
+    {{python}} scripts/apply_repairs.py {{args}}

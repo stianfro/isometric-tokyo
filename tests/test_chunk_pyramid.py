@@ -32,6 +32,7 @@ class ChunkPyramidTests(unittest.TestCase):
         self.index = {
             "schema_version": 1,
             "status": "complete",
+            "ai_styling": False,
             "bounds_px": [-5, -3, 67, 41],
             "chunk_size_px": self.size,
             "layers": ["textured", "geometry"],
@@ -118,6 +119,92 @@ class ChunkPyramidTests(unittest.TestCase):
                 self.assertIsNone(
                     expected.crop(box).getbbox(), "Only uncovered tiles may be absent"
                 )
+
+    def viewer_metadata(self):
+        return {
+            "title": "Synthetic fixture",
+            "source_edition": "Original test data",
+            "ai_styling": False,
+            "attribution": [{"label": "Project", "url": "https://example.org/source"}],
+            "coverage": {"label": "Fixture only", "bbox": [139, 35, 140, 36]},
+            "notice_text": "Synthetic test pixels, not geographic data.\n",
+            "layer_labels": {"textured": "Source", "geometry": "Geometry"},
+        }
+
+    def test_viewer_manifest_keeps_offsets_sparse_coverage_and_notices(self):
+        self.index["chunks"] = self.index["chunks"][::2]
+        metadata = self.viewer_metadata()
+        built = self.build(viewer_metadata=metadata)
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        self.assertEqual(manifest["id"], built["id"])
+        self.assertEqual(manifest["bounds_px"], [-5, -3, 67, 41])
+        self.assertEqual((manifest["width"], manifest["height"]), (72, 44))
+        self.assertEqual(
+            len(manifest["coverage"]["rectangles_px"]), len(self.index["chunks"])
+        )
+        self.assertFalse(manifest["artwork_approved"])
+        self.assertFalse(manifest["source_coverage_verified"])
+        self.assertNotIn("original", manifest["layers"][0])
+        self.assertEqual(
+            (self.output / "NOTICE.txt").read_text(), metadata["notice_text"]
+        )
+        self.assertEqual(self.build(viewer_metadata=metadata)["generated_tiles"], 0)
+        metadata["source_edition"] = "Updated explicit edition"
+        self.assertNotEqual(self.build(viewer_metadata=metadata)["id"], built["id"])
+
+    def test_viewer_safety_limits_are_checked_before_export(self):
+        from viewer_manifest import manifest_for
+
+        settings = {
+            "bounds_px": [0, 0, 100_000_001, 1],
+            "layers": ["textured"],
+            "tile_size": 256,
+            "overlap": 1,
+        }
+        metadata = self.viewer_metadata()
+        metadata["layer_labels"] = {}
+        with self.assertRaisesRegex(ValueError, "browser"):
+            manifest_for(metadata, settings, [], "fixture")
+        settings["bounds_px"] = [0, 0, 10, 10]
+        settings["layers"] = [f"layer-{number}" for number in range(9)]
+        with self.assertRaisesRegex(ValueError, "browser"):
+            manifest_for(metadata, settings, [], "fixture")
+
+    def test_viewer_cannot_mislabel_styling_provenance(self):
+        metadata = self.viewer_metadata()
+        self.index["ai_styling"] = True
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            self.build(viewer_metadata=metadata)
+        metadata["ai_styling"] = True
+        self.build(viewer_metadata=metadata)
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        self.assertTrue(manifest["ai_styling"])
+        del self.index["ai_styling"]
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            self.build(viewer_metadata=metadata)
+
+    def test_viewer_metadata_tampering_is_rejected(self):
+        self.build(viewer_metadata=self.viewer_metadata())
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        manifest["artwork_approved"] = True
+        (self.output / "manifest.json").write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "manifest disagrees"):
+            verify_pyramid(self.output)
+
+    def test_invalid_viewer_metadata_does_not_publish(self):
+        for field, value in (
+            ("attribution", []),
+            ("ai_styling", "false"),
+            ("coverage", {"label": "bad", "bbox": [140, 36, 139, 35]}),
+            ("layer_labels", {"missing": "Missing"}),
+            ("source_edition", ""),
+            ("notice_text", ""),
+        ):
+            metadata = self.viewer_metadata()
+            metadata[field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.build(viewer_metadata=metadata)
+            self.assertFalse(self.output.exists())
 
     def test_native_pixels_and_every_reduction_match_reference(self):
         result = self.build()

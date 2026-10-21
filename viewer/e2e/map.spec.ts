@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 })
 test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]) })
 
-const map = (page: Page) => page.getByRole('region', { name: 'Shinjuku interactive map' })
+const map = (page: Page) => page.getByRole('region', { name: /interactive map$/ })
 const state = (page: Page) => {
   const params = new URLSearchParams(new URL(page.url()).hash.slice(1))
   return { x: Number(params.get('x')), y: Number(params.get('y')), z: Number(params.get('z')), layer: params.get('layer') }

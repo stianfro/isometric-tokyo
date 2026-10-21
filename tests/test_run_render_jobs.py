@@ -157,6 +157,53 @@ class BatchTests(unittest.TestCase):
         self.assertFalse(report["ready_for_review"])
         self.assertEqual(report["failed_this_run"], 2)
 
+    def test_context_identity_and_runner_inputs(self):
+        context = self.root / "context.json"
+        tile = {"context_type": "tran", "dependencies": []}
+        for field, hash_field, name in (
+            ("path", "sha256", "road.b3dm"),
+            ("glb_path", "glb_sha256", "road.glb"),
+            ("tables_path", "tables_sha256", "tables.json"),
+        ):
+            path = self.root / name
+            path.write_bytes(name.encode())
+            tile[field], tile[hash_field] = name, sha256(path)
+        data = {
+            "schema_version": 1,
+            "kind": "plateau-context",
+            "status": "complete",
+            "tiles": [tile],
+        }
+        context.write_text(json.dumps(data))
+
+        def runner(config, destination, inputs, heartbeat):
+            self.assertEqual(inputs["context"], context.resolve())
+            return self.render(config, destination, inputs, heartbeat)
+
+        def run():
+            return run_batch(
+                self.config,
+                self.manifest,
+                self.output,
+                self.database,
+                self.root,
+                context=context,
+                renderer_version="fixture-1",
+                runner=runner,
+            )
+
+        first = run()
+        self.assertTrue(first["ready_for_review"])
+        self.assertEqual(run()["rendered_this_run"], 0)
+        (self.root / "road.glb").write_bytes(b"new mesh")
+        with self.assertRaisesRegex(ValueError, "checksum"):
+            run()
+        tile["glb_sha256"] = sha256(self.root / "road.glb")
+        context.write_text(json.dumps(data))
+        updated = run()
+        self.assertEqual(updated["rendered_this_run"], 2)
+        self.assertFalse(set(first["states"]) & set(updated["states"]))
+
     def test_changed_sources_create_new_jobs(self):
         first = self.run_batch()
         self.manifest.write_text(json.dumps({"tiles": [], "edition": "new"}))

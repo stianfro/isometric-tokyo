@@ -9,21 +9,34 @@ from pathlib import Path
 
 from atlas import load_config, plan_chunks
 from jobs import Ledger, artifact_path, sha256
+from render_context import context_assets, verify_context_assets
 from render_geometry import finalize, relative_asset
 
 
-def source_identity(manifest_path, ground_path, terrain_path):
+def source_identity(manifest_path, ground_path, terrain_path, context_path=None):
     manifest = json.loads(manifest_path.read_text())
     inputs = {"buildings_manifest": sha256(manifest_path), "building_glbs": {}}
     for tile in manifest["tiles"]:
         name = tile["glb_path"]
         path = relative_asset(manifest_path.parent, name)
         inputs["building_glbs"][name] = sha256(path)
+        if "path" in tile:
+            inputs.setdefault("building_originals", {})[tile["path"]] = sha256(
+                relative_asset(manifest_path.parent, tile["path"])
+            )
     if ground_path:
         inputs["ground_manifest"] = sha256(ground_path)
         inputs["ground_image"] = sha256(ground_path.parent / "ground.png")
     if terrain_path:
         inputs["terrain_mesh"] = sha256(terrain_path)
+    if context_path:
+        _data, assets, _counts = context_assets(context_path)
+        verify_context_assets(assets)
+        inputs["context_manifest"] = sha256(context_path)
+        inputs["context_assets"] = {
+            path.relative_to(context_path.parent.resolve()).as_posix(): checksum
+            for path, checksum in assets
+        }
     return inputs
 
 
@@ -36,6 +49,9 @@ def renderer_identity():
         "render_atlas.py",
         "render_sample.py",
         "render_geometry.py",
+        "render_context.py",
+        "render_guides.py",
+        "verify_guides.py",
     ]
     return {name: sha256(root / name) for name in names}
 
@@ -60,8 +76,8 @@ def run_blender(config_path, destination, inputs, heartbeat, *, timeout=1800):
         "--max-chunks",
         "1",
     ]
-    for key in ("ground", "terrain"):
-        if inputs[key]:
+    for key in ("ground", "terrain", "context"):
+        if inputs.get(key):
             command.extend(["--" + key, str(inputs[key])])
     destination.mkdir(parents=True, exist_ok=True)
     with (destination / "render.log").open("w") as log:
@@ -104,6 +120,7 @@ def run_batch(
     *,
     ground=None,
     terrain=None,
+    context=None,
     retry_failed=False,
     max_jobs=16,
     renderer_version="unspecified",
@@ -117,13 +134,14 @@ def run_batch(
         raise ValueError("An actual renderer version is required for job identity")
     config = load_config(config_path)
     plan = plan_chunks(config, max_chunks=max_jobs)
-    provenance = source_identity(manifest, ground, terrain)
+    provenance = source_identity(manifest, ground, terrain, context)
     code = renderer_identity()
     output.mkdir(parents=True, exist_ok=True)
     inputs = {
         "manifest": manifest.resolve(),
         "ground": ground.resolve() if ground else None,
         "terrain": terrain.resolve() if terrain else None,
+        "context": context.resolve() if context else None,
     }
     ledger = Ledger(database)
     jobs = {}
@@ -175,7 +193,7 @@ def run_batch(
                         raise ValueError("Rendered chunk checksum mismatch")
                     paths.append(path.relative_to(workspace).as_posix())
                 if (
-                    source_identity(manifest, ground, terrain) != provenance
+                    source_identity(manifest, ground, terrain, context) != provenance
                     or renderer_identity() != code
                 ):
                     raise ValueError(
@@ -201,7 +219,7 @@ def run_batch(
         ready = all(state in {"needs_review", "approved"} for state in states.values())
         if ready:
             if (
-                source_identity(manifest, ground, terrain) != provenance
+                source_identity(manifest, ground, terrain, context) != provenance
                 or renderer_identity() != code
             ):
                 raise ValueError(
@@ -245,6 +263,7 @@ def run_batch(
                 "chunks": chunks,
                 "source_coverage_verified": False,
                 "artwork_approved": False,
+                "ai_styling": False,
                 "source_review_complete": all(
                     state == "approved" for state in states.values()
                 ),
@@ -280,6 +299,7 @@ def main():
     )
     parser.add_argument("--ground", type=Path)
     parser.add_argument("--terrain", type=Path)
+    parser.add_argument("--context", type=Path)
     parser.add_argument("--output", type=Path, default=Path("renders/batch-shinjuku"))
     parser.add_argument("--database", type=Path, default=Path(".cache/jobs.sqlite"))
     parser.add_argument("--workspace", type=Path, default=Path("."))
@@ -297,6 +317,7 @@ def main():
         args.workspace,
         ground=args.ground,
         terrain=args.terrain,
+        context=args.context,
         retry_failed=args.retry_failed,
         max_jobs=args.max_jobs,
         renderer_version=version,

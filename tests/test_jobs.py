@@ -93,6 +93,74 @@ class LedgerTests(unittest.TestCase):
         finally:
             second.close()
 
+    def test_import_repair_atomically_invalidates_only_old_descendants(self):
+        source = self.enqueue()
+        self.complete(self.ledger.claim("source"))
+        old = self.enqueue("old-tiles", [source])
+        worker = self.ledger.claim("old-worker")
+        dependent = self.enqueue("old-preview", [old])
+        unrelated = self.enqueue("unrelated")
+        (self.root / "repair.png").write_bytes(b"new image")
+        args = (
+            "repair",
+            "fixture",
+            {"note": "Correct join"},
+            self.root,
+            ["repair.png"],
+        )
+        repair = self.ledger.import_completed(
+            *args,
+            dependencies=[source],
+            invalidate_dependents_of=[source],
+            invalidation_note="Replaced image",
+        )
+        self.assertEqual(self.ledger.get(source)["state"], "approved")
+        self.assertEqual(self.ledger.get(repair)["state"], "needs_review")
+        self.assertEqual(self.ledger.get(unrelated)["state"], "pending")
+        for ident in (old, dependent):
+            self.assertEqual(self.ledger.get(ident)["state"], "failed")
+        with self.assertRaisesRegex(ValueError, "stale"):
+            self.ledger.finish(old, worker["lease_token"], self.root, ["tile.png"])
+        self.ledger.approve(repair, self.root, "Replacement inspected")
+        rebuilt = self.enqueue("new-tiles", [repair])
+        self.assertEqual(
+            repair,
+            self.ledger.import_completed(
+                *args,
+                dependencies=[source],
+                invalidate_dependents_of=[source],
+                invalidation_note="Replaced image",
+            ),
+        )
+        self.assertEqual(self.ledger.get(rebuilt)["state"], "pending")
+
+    def test_import_dependencies_and_approval_integrity(self):
+        source = self.ledger.import_completed(
+            "source", "fixture", {}, self.root, ["tile.png"]
+        )
+        (self.root / "repair.png").write_bytes(b"repair")
+        repair = self.ledger.import_completed(
+            "repair", "fixture", {}, self.root, ["repair.png"], dependencies=[source]
+        )
+        with self.assertRaisesRegex(ValueError, "dependencies"):
+            self.ledger.approve(repair, self.root, "Inspected")
+        self.ledger.approve(source, self.root, "Source inspected")
+        (self.root / "tile.png").write_bytes(b"mutated dependency")
+        with self.assertRaisesRegex(ValueError, "changed"):
+            self.ledger.approve(repair, self.root, "Inspected")
+        self.assertEqual(self.ledger.get(repair)["state"], "needs_review")
+
+    def test_import_bad_dependencies_roll_back(self):
+        for kwargs in (
+            {"dependencies": ["missing"]},
+            {"invalidate_dependents_of": ["missing"], "invalidation_note": "Changed"},
+        ):
+            with self.assertRaises(ValueError):
+                self.ledger.import_completed(
+                    "repair", "fixture", {}, self.root, ["tile.png"], **kwargs
+                )
+        self.assertEqual(self.ledger.list_jobs(), [])
+
     def test_input_validation_and_path_escape(self):
         with self.assertRaises(ValueError):
             self.ledger.enqueue("render", "sample", {"bad": float("nan")})

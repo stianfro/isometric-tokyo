@@ -19,13 +19,13 @@ See [source terms and full attribution](THIRD_PARTY_NOTICES.md).
 ## What is here
 
 - A roughly 800 × 800 metre sample around the Tokyo Metropolitan Government buildings.
-- Scripts to download bounded building, orthophoto and terrain samples.
+- Scripts to download bounded building, orthophoto, terrain, road and water samples.
 - A browser viewer with pan/zoom, touch and keyboard controls, aligned source
   comparison, an overview map and shareable views.
 - Pixel-aligned Blender chunk rendering, verified against full-view references.
-- Source building-ID, semantic, silhouette, depth and normal guides.
+- Original building/context feature-ID, semantic, silhouette, depth and normal guides.
 - Bounded-memory image pyramids with selective rebuilding.
-- Resumable render jobs and a local source-output review desk.
+- Resumable render jobs, a local review desk, seam regions and immutable repair candidates.
 - [Geometry-only comparison](previews/shinjuku-geometry.png).
 - Offline tests, source checksums, browser tests and saved-scene verification.
 - A verified metadata inventory for all 23 wards, with explicit source-quality gaps.
@@ -98,11 +98,13 @@ just atlas-plan
 just seam-check
 just atlas-batch
 just chunk-tiles renders/batch-shinjuku/render-index.json renders/shinjuku-tiles
+just viewer-dev-chunks renders/batch-shinjuku/render-index.json
 just review
 ```
 
 The batch runner resumes without repeating completed jobs and leaves output
 awaiting review. See [rendering and guide layers](docs/RENDERING.md),
 [production jobs](docs/PRODUCTION.md), [review controls](docs/REVIEW.md),
-[sparse pyramids](docs/CHUNK_PYRAMID.md), [source inventory](docs/SOURCE_INVENTORY.md)
+[sparse pyramids](docs/CHUNK_PYRAMID.md), [seam review and repairs](docs/REPAIR.md),
+[source inventory](docs/SOURCE_INVENTORY.md)
 and [current implementation status](docs/PROGRESS.md).
