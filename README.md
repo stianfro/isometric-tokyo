@@ -1,6 +1,8 @@
 # isometric.tokyo
 
-An independent isometric Tokyo map experiment using open Project PLATEAU data.
+An independent illustrated isometric map of Tokyo in development, using open
+Project PLATEAU data. The goal is a continuous, explorable map in the same product
+category as [isometric.nyc](https://isometric.nyc/), with original Tokyo artwork.
 
 **Current state:** a reproducible, unstyled Shinjuku source-quality study. The
 interactive viewer is planned, not implemented.
@@ -20,12 +22,21 @@ See [source terms and full attribution](THIRD_PARTY_NOTICES.md).
 - Blender rendering with a fixed orthographic isometric camera.
 - [Geometry-only comparison](previews/shinjuku-geometry.png).
 - Offline tests, source checksums and saved-scene verification.
-- [The phased proof-of-concept plan](docs/PLAN.md).
+- [The phased implementation roadmap](docs/PLAN.md), from the source study to a
+  seamless illustrated atlas and interactive Tokyo map.
 - [Detailed source-quality notes and provenance](README.txt).
 
 Landmark geometry is useful, but some smaller buildings are untextured. Trees are
 currently ground photography, not 3D vegetation. Source dates and LOD vary.
 The FY2025 dataset edition does not mean that all photography was taken in 2025.
+
+## Roadmap
+
+The [implementation plan](docs/PLAN.md) covers the full path: a tiled Shinjuku
+viewer, seamless geographic rendering, an approved art direction, production and
+review tools, a complete illustrated district, then connected expansion toward
+Tokyo's 23 special wards. Each phase has deliverables and acceptance criteria.
+The current sample is the baseline, not the completed product.
 
 ## Reproduce
 
