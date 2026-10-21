@@ -9,13 +9,15 @@ from nine 1024 × 1024 artwork cores. Nine separate native 1254 × 1254 generati
 supply the initial exact crops; bounded repairs address details found during
 review through recorded exact overwrites, not upscaling or blending. This adds
 detail to the same bounded source view, not more geography or a completed district.
-A recorded seam and source-comparison review is required before release selection.
+All 12 internal joins and four junctions passed recorded visual review after one
+bounded rooftop repair. Source comparison remains approximate, not geographic approval.
 
 The full-screen viewer keeps a compact toolbar, source access and shareable
 positions. Switching the native pilot's Source/Pixel city layers preserves framing,
 not pixel registration or geographic accuracy. Fine facade, roof, planting and
 park-path details are artistic. Geographic fidelity and production artwork remain
-unapproved. See [the native pilot workflow](docs/NATIVE_PILOT.md).
+unapproved. See [pilot results and downloads](docs/NATIVE_PILOT_RESULTS.md)
+and [the native pilot workflow](docs/NATIVE_PILOT.md).
 
 ![Earlier Pixel city Shinjuku art-direction study, AI-assisted](previews/shinjuku-art/ai-pixel-city.png)
 

@@ -94,9 +94,12 @@ source-quality result as the finished illustrated Tokyo map.
   bounded repair outputs and exact replacement regions. Generated originals and
   prompts are retained. The scripts ingest external model results; they do not
   reproduce those model calls.
-- Assembly emits 12 join strips and four junction crops. Release export requires
-  a completed review bound to their exact pixels, plus a separate source
-  comparison decision. Passing a crop checksum is not a visual review.
+- All 12 join strips and four junction crops passed visual review of the final
+  pixels. One clipped rooftop detail at a core boundary required a 260 × 120
+  pixel repair. Its four outer edges were inspected separately; no other pixels
+  changed. The repaired roof and remaining 15 unchanged review regions retain
+  exact RGB-bound evidence. Source comparison is recorded separately and remains
+  approximate. Passing a crop checksum is not a visual review.
 - The direct native-atlas viewer keeps the minimal interface and a compact
   Source/Pixel city toggle. Switching preserves position and zoom in shared
   framing without claiming geographic pixel registration.
@@ -135,11 +138,11 @@ artwork or geographic approval.
    assumptions. Catalog completeness is not completeness of the real city.
 2. Inspect remaining building/road/water terrain separations and mapped vegetation
    placement. Source heights stay unchanged unless a defensible correction exists.
-3. Complete and record native-pilot source comparison and all 12 join/four
-   junction reviews. Build only from the reviewed final pixels, then inspect the
-   actual map artifact on desktop and mobile before selecting it.
-4. Exercise repair review and regeneration on real artwork after source/style
-   approval, then add map-based region navigation and art-generation accounting.
+3. Expand representative source/art fidelity checks beyond the current bounded
+   view before starting a district. The native pilot's 12 join/four junction
+   review is complete, not a blanket approval for later artwork.
+4. Build on the exercised native rooftop repair workflow with map-based region
+   navigation and measured art-generation/review accounting.
 5. Complete an illustrated Shinjuku district, measure accepted-output cost and
    review effort, then expand connected coverage under the roadmap's gates.
 
@@ -153,8 +156,11 @@ The inactive `ci/checks.yml` workflow template runs the non-Blender suites and
 browser tests once installed as a GitHub workflow. No remote CI result is claimed.
 YAML changes are validated with `yq`.
 
-The selected commit and image artifact need their own final check results. Earlier
-suite totals and payload measurements are not evidence for the native pilot.
+The final native artifact passed all lints, 325 Python tests, 89 viewer tests,
+6 review-model tests and 48 automated browser tests. Standalone bundle checks
+and actual desktop/mobile artifact inspection also passed. See
+[native results and measured limits](NATIVE_PILOT_RESULTS.md). The mobile
+first-view imagery target is met; the desktop imagery target remains open.
 No remote CI execution is claimed.
 
 ## Historical interactive preview and immutable app release

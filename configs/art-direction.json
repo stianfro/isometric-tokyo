@@ -9,5 +9,5 @@
   "bulk_generation_authorized": false,
   "pilot_generation_authorized": true,
   "pilot_scope": "Nine native 1024-pixel Shinjuku cores on the existing source view, with at most four bounded seam-repair calls. Publication requires visual review of every join and junction.",
-  "next_gate": "Native source-constrained nine-patch generation, source comparison and all-join visual review before pilot publication. District expansion remains a separate gate."
+  "next_gate": "The bounded native pilot passed seam and approximate source review after one repair. District expansion still requires source treatment, representative fidelity checks and measured generation/review cost. No bulk generation or geographic approval is inferred."
 }
