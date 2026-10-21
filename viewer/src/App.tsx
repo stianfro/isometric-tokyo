@@ -164,6 +164,8 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       showNavigationControl: false,
       showNavigator: overview,
       homeFillsViewer: coverHome,
+      // High-density pilot displays load native detail on zoom, not at home.
+      minPixelRatio: sharedPilot && window.devicePixelRatio >= 2 ? 1 : 0.5,
       navigatorElement,
       navigatorAutoFade: false,
       navigatorDisplayRegionColor: '#215bd6',
@@ -245,7 +247,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       viewer.destroy()
       viewerRef.current = null
     }
-  }, [atlas, imageAspect, manifestUrl, retry, saveView, collection, collectionView, overview, coverHome])
+  }, [atlas, imageAspect, manifestUrl, retry, saveView, collection, collectionView, overview, coverHome, sharedPilot])
 
   useEffect(() => {
     layerRef.current = layer

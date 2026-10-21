@@ -72,3 +72,28 @@ test('source toggle preserves shared framing but correctly changes provenance', 
   await expect(page.getByRole('button', { name: 'AI preview · Credits', exact: true })).toBeVisible()
   for (const key of ['x', 'y', 'z']) expect(position(page).get(key)).toBe(original.get(key))
 })
+
+test('native pilot preserves desktop detail and defers high-density native pixels until zoom', async ({ page }) => {
+  const levels: number[] = []
+  page.on('request', (request) => {
+    const match = new URL(request.url()).pathname.match(/styled_files\/(\d+)\//)
+    if (match) levels.push(Number(match[1]))
+  })
+  await page.goto('/')
+  await ready(page, 'styled')
+  await page.waitForLoadState('networkidle')
+  const viewport = page.viewportSize()!
+  const density = await page.evaluate(() => window.devicePixelRatio)
+  const minPixelRatio = density >= 2 ? 1 : 0.5
+  const homeLevel = Math.min(12, Math.floor(12 + Math.log2(Math.max(viewport.width, viewport.height) * density / (3072 * minPixelRatio))))
+  expect(levels.length).toBeGreaterThan(0)
+  expect(Math.max(...levels)).toBe(homeLevel)
+  expect(homeLevel).toBe(11)
+  expect(levels).not.toContain(12)
+  const initialZoom = Number(position(page).get('z'))
+  await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+  await expect.poll(() => Number(position(page).get('z'))).toBeGreaterThan(initialZoom)
+  await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+  await expect.poll(() => levels.includes(12)).toBe(true)
+  await expect(page.getByRole('region', { name: 'Shinjuku interactive map' })).toHaveAttribute('data-ready', 'true')
+})

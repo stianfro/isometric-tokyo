@@ -15,16 +15,16 @@ def generate(directory):
     directory.mkdir(parents=True, exist_ok=True)
     layers = []
     for name, color in (("styled", (115, 176, 167)), ("textured", (175, 185, 198))):
-        with Image.new("RGB", (384, 384), color) as image:
+        with Image.new("RGB", (3072, 3072), color) as image:
             draw = ImageDraw.Draw(image)
             for y in range(3):
                 for x in range(3):
-                    left, top = x * 128 + 20, y * 128 + 20
+                    left, top = x * 1024 + 160, y * 1024 + 160
                     draw.rectangle(
-                        (left, top, left + 85, top + 85),
+                        (left, top, left + 680, top + 680),
                         fill=(x * 60, 80 + y * 50, 100),
                     )
-            pyramid(image, directory, name, tile_size=64)
+            pyramid(image, directory, name, tile_size=256)
         layers.append(
             {
                 "id": name,
@@ -37,9 +37,9 @@ def generate(directory):
         "id": "pilot-fixture",
         "title": "Shinjuku nine-patch pilot",
         "place": {"name": "Shinjuku"},
-        "width": 384,
-        "height": 384,
-        "tile_size": 64,
+        "width": 3072,
+        "height": 3072,
+        "tile_size": 256,
         "overlap": 1,
         "format": "webp",
         "layers": layers,
