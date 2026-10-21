@@ -7,13 +7,13 @@ source-quality result as the finished illustrated Tokyo map.
 | --- | --- | --- |
 | 1: interactive source map | Implemented and tested | Tiled source/geometry viewer, minimap, keyboard/touch controls, shared views, credits, errors and matching atlas contract |
 | 2: repeatable source atlas | In progress | Global pixel grid, no geometry cuts at chunk edges, corrected ground mapping, real and synthetic 3 x 3 seam checks, exact building-ID/depth/normal/semantic guides, 23-ward metadata inventory; road/water context with original feature IDs; bounded camera/sun source-selection audit, native terrain edge welding and separately attributed mapped vegetation; actual-world completeness and remaining vertical disagreements still need review |
-| 3: art direction | Pixel city preferred | Owner preference recorded separately from geographic approval; explorable illustrated preview and independent source view; representative crops and a seamless nine-patch fidelity review remain before bulk artwork |
-| 4: production workflow | In progress | Resumable bounded render batches, leases/retries, checksum-gated review desk, sparse image pyramids and incremental rebuilds; bounded paired seam review, immutable repair import and reviewed repair-aware chunk export; content-addressed preview and complete web bundles with standalone checksum verification; map-based review navigation and art-generation accounting remain |
+| 3: art direction | Pixel city preferred | Owner preference remains separate from geographic approval; nine native artwork cores generated for the existing bounded view, with exact source/structural guides and hash-bound manual seam/source review before release; bulk artwork remains gated |
+| 4: production workflow | In progress | Resumable bounded render batches, leases/retries, checksum-gated review desk, sparse image pyramids and incremental rebuilds; bounded paired seam review, immutable repair import and reviewed repair-aware chunk export; native-window generation ingestion, exact crop export, hash-bound seam/source review and content-addressed map/web bundles; map-based review navigation and complete art-generation accounting remain |
 | 5: illustrated Shinjuku | Pending | Requires approved art direction, complete local source treatment and district-wide review |
 | 6: connected Tokyo expansion | Pending | Requires district measurements and accepted coverage batches |
 | 7: completed product | Pending | Requires the agreed coverage and final acceptance audit |
 
-## Verified results
+## Earlier verified results
 
 - The viewer uses actual multiresolution WebP tiles, not a full-image fallback.
   Its baseline has 294 image tiles across two aligned layers.
@@ -78,24 +78,56 @@ source-quality result as the finished illustrated Tokyo map.
   available in [the art comparison](STYLE_PILOT.md). The AI candidates preserve
   recognizable composition but redraw details; neither is an approved map layer.
 
+## Native-resolution nine-core pilot
+
+- The original 1260 m orthographic camera view was rendered at native
+  3072 × 3072 pixels, without enlarging geographic coverage or upscaling a study.
+  Source and Atlas ink share the unchanged camera and geometry.
+- The source pass uses 64 samples and four CPU threads. Native source, structural
+  render and guides completed in about 14 minutes for the recorded run.
+- All 99 source/structural core, context and guide assets match their monolithic
+  parents pixel-for-pixel or byte-for-byte. All 9,437,184 guide pixels hit geometry,
+  with zero background pixels and all 138 building meshes resolved.
+- Nine separate native 1254 × 1254 AI outputs now supply nine exact
+  1024 × 1024 artwork cores. They form a 3072-square image through integer crops,
+  with no scaling, blending or feathering. Review can require separately recorded
+  bounded repair outputs and exact replacement regions. Generated originals and
+  prompts are retained. The scripts ingest external model results; they do not
+  reproduce those model calls.
+- Assembly emits 12 join strips and four junction crops. Release export requires
+  a completed review bound to their exact pixels, plus a separate source
+  comparison decision. Passing a crop checksum is not a visual review.
+- The direct native-atlas viewer keeps the minimal interface and a compact
+  Source/Pixel city toggle. Switching preserves position and zoom in shared
+  framing without claiming geographic pixel registration.
+- Native image and app artifacts have separate content-derived identities.
+  `map-*` tasks require the native release; `preview-*` still builds the historical
+  1254-pixel image study. Artifact creation does not establish publication.
+
+See [native generation and review](NATIVE_PILOT.md) for the actual commands,
+required source inputs and limits.
+
 ## What the map does not yet claim
 
-The preview now opens the AI-assisted Pixel city image and retains the expanded
-source render as an independent view. Their native dimensions and image
-coordinates differ; switching resets framing. The earlier source/geometry atlas
-is still available. Source data has mixed LOD, missing textures, photographic
-shadows and cropped coverage edges. The new
-renderer retains whole loaded geometry, but loaded geometry is not proof that
-all real-world features are present. The new bounded audit verifies selected
-metadata volumes for this view and directional sun, full terrain support and the
-orthophoto tile grid. `source_coverage_verified: false` still records unknown
-real-world completeness and source accuracy, rather than contradicting those
-narrower passed checks. Diffuse illumination is not covered by the sun-cone audit.
-
+Higher native image detail is not expanded geography. This remains the existing
+bounded Shinjuku view, not a complete district, live map or navigation aid.
 Pixel city is the preferred aesthetic direction, not approval of geographic
-fidelity or production artwork. No bulk image generation has run, and no district
-or 23-ward completion claim is made. Source-review approvals do
-not constitute final artwork approval.
+fidelity or production artwork. The native art and source share framing, but AI
+may alter building edges, major routes and vegetation. Fine facades, roof details,
+planting and park paths are artistic interpretations.
+
+Source data has mixed LOD, missing textures, photographic shadows and cropped
+coverage edges. The renderer retains whole loaded geometry, but that is not proof
+that all real-world features are present. The bounded audit verifies selected
+metadata volumes for this view and directional sun, terrain support and the
+orthophoto grid. `source_coverage_verified: false` records unknown real-world
+completeness and accuracy, rather than contradicting those narrower checks.
+Diffuse illumination is not covered by the sun-cone audit.
+
+Only the bounded nine-core pilot generation was authorized. District-wide bulk
+artwork and 23-ward expansion remain separate gates. Source review, seamless
+pixel assembly and an approximate visual comparison do not constitute final
+artwork or geographic approval.
 
 ## Next acceptance gates
 
@@ -103,8 +135,9 @@ not constitute final artwork approval.
    assumptions. Catalog completeness is not completeness of the real city.
 2. Inspect remaining building/road/water terrain separations and mapped vegetation
    placement. Source heights stay unchanged unless a defensible correction exists.
-3. Apply the preferred Pixel city direction to representative geography, then
-   inspect source fidelity and nine-patch joins. Preserve reference and guide constraints.
+3. Complete and record native-pilot source comparison and all 12 join/four
+   junction reviews. Build only from the reviewed final pixels, then inspect the
+   actual map artifact on desktop and mobile before selecting it.
 4. Exercise repair review and regeneration on real artwork after source/style
    approval, then add map-based region navigation and art-generation accounting.
 5. Complete an illustrated Shinjuku district, measure accepted-output cost and
@@ -116,17 +149,15 @@ not constitute final artwork approval.
 `just viewer-e2e` runs headless map/review tests on desktop and mobile viewports.
 `just seam-check` renders and verifies a fresh Blender fixture, including guides.
 `just verify-atlas` checks the generated baseline release.
-The inactive `ci/checks.yml` workflow template runs the
-non-Blender suites and browser tests once installed as a GitHub workflow. The
-current publishing credential cannot add workflow files, so no remote CI result
-is claimed. YAML changes are validated with `yq`.
+The inactive `ci/checks.yml` workflow template runs the non-Blender suites and
+browser tests once installed as a GitHub workflow. No remote CI result is claimed.
+YAML changes are validated with `yq`.
 
-Latest verification: 284 Python tests, 88 viewer tests, 6 review-model tests and
-42 headless browser tests pass (420 total). Preview packaging, standalone bundle
-verification and the existing source-atlas verification pass. The prior geographic source comparison remains unchanged; this work does
-not reinterpret its results as art approval. No remote CI execution is claimed.
+The selected commit and image artifact need their own final check results. Earlier
+suite totals and payload measurements are not evidence for the native pilot.
+No remote CI execution is claimed.
 
-## Interactive preview and immutable app release
+## Historical interactive preview and immutable app release
 
 - The map fills the screen, with one compact toolbar and a small credits button.
   There are no place cards or full-width bars. Optional overview, sharing, reset
@@ -146,10 +177,12 @@ not reinterpret its results as art approval. No remote CI execution is claimed.
 - The illustrated image is a bounded preview, not a completed district or a
   seamless generated tile set. No additional model calls are needed to build it.
 
-See [preview releases](PREVIEW_RELEASE.md) for the repeatable artifact workflow.
+These results belong to the historical committed study, not the new native pilot.
+See [map artifacts](PREVIEW_RELEASE.md) for both release formats and selection rules.
 
-Cold first-view tile payload in the automated minimal-UI smoke test was
-2,909,598 bytes on the desktop viewport and 1,782,468 bytes on the Pixel 7
+For the historical 1254-pixel study, cold first-view tile payload in the automated
+minimal-UI smoke test was 2,909,598 bytes on the desktop viewport and 1,782,468
+bytes on the Pixel 7
 emulation. Both are below the 3 MiB initial-imagery target. These are local
 encoded-image byte counts, not physical-phone or throttled-network benchmarks.
 The viewer does not fetch original PNGs during normal navigation.

@@ -4,15 +4,23 @@ An independent illustrated isometric map of Tokyo in development, using open
 Project PLATEAU data. The goal is a continuous, explorable map in the same product
 category as [isometric.nyc](https://isometric.nyc/), with original Tokyo artwork.
 
-**Current state:** an explorable **Pixel city** Shinjuku preview, with a separate
-source-render view, shareable positions and visible provenance. The interface
-keeps the map full-screen, with a compact toolbar and details behind Credits.
-Pixel city is the preferred art direction. The versioned preview build includes verified image
-tiles, source notices and the adapted vegetation database. It is not a complete
-district or geographically approved map. Geographic rendering, guide layers and
-the source-output review workflow remain available.
+**Current state:** a native **3072 × 3072 Pixel city pilot** of Shinjuku, assembled
+from nine 1024 × 1024 artwork cores. Nine separate native 1254 × 1254 generations
+supply the initial exact crops; bounded repairs address details found during
+review through recorded exact overwrites, not upscaling or blending. This adds
+detail to the same bounded source view, not more geography or a completed district.
+A recorded seam and source-comparison review is required before release selection.
 
-![Pixel city Shinjuku preview, AI-assisted](previews/shinjuku-art/ai-pixel-city.png)
+The full-screen viewer keeps a compact toolbar, source access and shareable
+positions. Switching the native pilot's Source/Pixel city layers preserves framing,
+not pixel registration or geographic accuracy. Fine facade, roof, planting and
+park-path details are artistic. Geographic fidelity and production artwork remain
+unapproved. See [the native pilot workflow](docs/NATIVE_PILOT.md).
+
+![Earlier Pixel city Shinjuku art-direction study, AI-assisted](previews/shinjuku-art/ai-pixel-city.png)
+
+*The image above is the earlier 1254-pixel direction study, not the new nine-core
+atlas. It remains the committed quick-start preview.*
 
 Derived from Tokyo Metropolitan Government / Project PLATEAU, Shinjuku, Shibuya
 and Nakano FY2025, and PLATEAU-Ortho 2023.
@@ -25,12 +33,15 @@ See [source terms and full attribution](THIRD_PARTY_NOTICES.md).
 
 ## What is here
 
-- A roughly 800 × 800 metre sample around the Tokyo Metropolitan Government buildings.
+- A bounded Shinjuku view around the Tokyo Metropolitan Government buildings.
 - Scripts to download bounded building, orthophoto, terrain, road and water samples.
 - A browser viewer with pan/zoom, touch and keyboard controls, an overview map
-  and shareable views. The illustrated preview and source render have separate
-  image coordinates. The earlier source/geometry atlas retains aligned comparison.
-- Content-addressed preview versions and verified, self-contained web bundles.
+  and shareable views. The native pilot has shared-framing Source/Pixel city
+  layers with explicit accuracy limits. The historical art preview has independent
+  coordinates; the earlier source/geometry atlas retains aligned comparison.
+- Native source rendering, nine-window AI-output ingestion and hash-bound manual
+  seam/source review before export. Generation itself is an external step.
+- Content-addressed image versions and verified, self-contained web bundles.
 - Pixel-aligned Blender chunk rendering, verified against full-view references.
 - Original building/context feature-ID, semantic, silhouette, depth and normal guides.
 - Bounded-memory image pyramids with selective rebuilding.
@@ -75,9 +86,10 @@ Both retain a recognizable composition but redraw details and building edges.
 Pixel city adds green roofs and planting not established by the source. Neither
 is a geometry-accurate comparison layer or approved artwork. Source credits and
 terms above still apply. [Prompts, provenance and limitations](previews/shinjuku-art/ai-studies.json)
-are retained. The preview opens Pixel city by default and keeps the expanded
-source render available as a distinct view. Switching views resets framing,
-rather than pretending that generated details match source pixels.
+are retained. The historical `preview-dev` study opens Pixel city by default and
+keeps its differently sized source render as a distinct view. That study resets
+framing on view changes. The new native pilot instead uses a shared 3072-pixel
+frame, while explicitly rejecting any claim of pixel-level geographic registration.
 
 ## Roadmap
 
@@ -87,7 +99,7 @@ review tools, a complete illustrated district, then connected expansion toward
 Tokyo's 23 special wards. Each phase has deliverables and acceptance criteria.
 The current sample is the baseline, not the completed product.
 
-## Explore the preview
+## Explore the studies and native pilot
 
 Requirements: Python 3.11+, Node.js 26, `just` and `uv`. Blender 5.2 is needed only
 for new geographic renders and scene checks, not for the viewer. No PLATEAU
@@ -100,7 +112,8 @@ just check
 just preview-dev
 ```
 
-The preview task builds verified image tiles from the attributed previews already
+This quick start opens the **historical 1254-pixel art study**, not the new native
+pilot. The preview task builds verified tiles from the attributed previews already
 in this repository, without new geographic downloads or image generation.
 It prints the local development address; it does not open a browser automatically. Original PNGs remain available from the map credits.
 
@@ -111,10 +124,27 @@ just preview-package
 just preview-verify
 ```
 
-The immutable bundle contains the app, selected preview version, original images,
-source evidence, licences and ODbL data. See [preview releases](docs/PREVIEW_RELEASE.md)
-for validation and version selection. `just viewer-dev` still opens the earlier
-aligned source/geometry atlas. Neither command opens a browser automatically.
+The immutable bundle contains the app, selected image version, source evidence,
+licences and ODbL data. `just viewer-dev` still opens the earlier aligned
+source/geometry atlas. No development command opens a browser automatically.
+
+The native pilot requires its generated artwork and completed review records,
+which are not recreated by the quick start. After following
+[the source, generation and review workflow](docs/NATIVE_PILOT.md):
+
+```sh
+just map-tiles renders/pixel-city-pilot-v1/render-index.json \
+  configs/shinjuku-pilot-source.json renders/pixel-city-pilot-v1/evidence.json
+just map-verify
+just map-dev
+# In a separate terminal, when ready to build an immutable artifact:
+just map-package
+```
+
+`map-*` tasks verify the selected native pilot and never rebuild the old art
+study. `preview-*` tasks select that historical study instead. See
+[release formats and version selection](docs/PREVIEW_RELEASE.md) before switching
+between them. Building an artifact is not a claim that it has been published.
 
 ## Reproduce geographic renders
 
