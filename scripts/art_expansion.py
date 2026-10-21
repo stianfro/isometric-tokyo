@@ -668,6 +668,14 @@ def export(directory, config_path, source_metadata, review_path, prompt_path):
         or source.get("core_reassembly_pixel_exact") is not True
     ):
         raise ValueError("A completed matching native expansion source is required")
+    support_record = source.get("source_support", {})
+    support_path = release.safe_file(source_metadata.parent, support_record.get("path"))
+    support_sha256 = release.digest(support_path)
+    if support_sha256 != support_record.get("sha256"):
+        raise ValueError("Native source support audit checksum mismatch")
+    native_cores = release.validate_native_support_receipt(
+        source, release.read_json(support_path), config, support_sha256
+    )
     for ident, name in (("source-reference", "source"), ("atlas-ink", "structure")):
         entries = [entry for entry in source["outputs"] if entry["id"] == ident]
         if len(entries) != 1:
@@ -697,6 +705,18 @@ def export(directory, config_path, source_metadata, review_path, prompt_path):
             atlas, source_image, BOUNDS
         ):
             raise ValueError("Expansion review belongs to different final pixels")
+    source_proof = {}
+    for key, name, original in (
+        ("receipt", "native-source.json", source_metadata),
+        ("support", "source-support.json", support_path),
+    ):
+        destination = release.safe_file(directory, "source-proof/" + name)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(original, destination)
+        source_proof[key] = {
+            "path": "source-proof/" + name,
+            "sha256": release.digest(destination),
+        }
     index = {
         "schema_version": 1,
         "status": "complete",
@@ -731,6 +751,7 @@ def export(directory, config_path, source_metadata, review_path, prompt_path):
         },
         "schema_version": 2,
         "source_provenance": source.get("source_provenance"),
+        "source_proof": source_proof,
         "parent": plan["parent"],
         "prompt": release.text(Path(prompt_path).read_text()),
         "comparison_mode": "reviewed-approximate",
@@ -774,6 +795,33 @@ def export(directory, config_path, source_metadata, review_path, prompt_path):
                             raise ValueError(
                                 "Expansion source core differs from native source crop"
                             )
+                    native_core = native_cores[ident]["assets"]["source-reference"][
+                        "core"
+                    ]
+                    original = release.safe_file(
+                        source_metadata.parent, native_core["path"]
+                    )
+                    if release.digest(original) != native_core["sha256"]:
+                        raise ValueError(
+                            "Finalized native source core checksum mismatch"
+                        )
+                    with (
+                        release.image(original) as rendered,
+                        Image.open(path) as current,
+                    ):
+                        if (
+                            rendered.size != current.size
+                            or rendered.tobytes() != current.convert("RGB").tobytes()
+                        ):
+                            raise ValueError(
+                                "Finalized native core differs from the verified source pixels"
+                            )
+                    # Retain the original encoded native crop, not a re-encoded equivalent.
+                    if release.digest(path) != native_core["sha256"]:
+                        shutil.copyfile(
+                            original,
+                            release.safe_file(directory, f"textured/{ident}.png"),
+                        )
                 outputs[layer] = {
                     "path": path.relative_to(directory).as_posix(),
                     "width": CORE,

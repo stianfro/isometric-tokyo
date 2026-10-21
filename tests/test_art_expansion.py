@@ -16,7 +16,7 @@ import art_pilot as pilot
 import build_map_release as release
 import test_build_map_release as fixtures
 from atlas import load_config
-from render_expansion_source import source_provenance
+from render_expansion_source import grid_plan, source_provenance
 
 ROOT = Path(__file__).resolve().parents[1]
 ORDER = json.loads((ROOT / "configs/shinjuku-expansion-order.json").read_text())
@@ -118,10 +118,72 @@ class ExpansionTests(unittest.TestCase):
         config["bounds_px"] = list(expansion.BOUNDS)
         cls.config = cls.base / "config.json"
         pilot.write_json(cls.config, config)
+        cls.support = cls.base / "source-support.json"
+        pilot.write_json(
+            cls.support,
+            {
+                "canonical_config": config,
+                "config_sha256": load_config(cls.config).fingerprint,
+                "building_manifest_sha256": "a" * 64,
+                "tile_selection_complete": True,
+                "required_tiles": 25,
+                "present_tiles": 25,
+                "missing_tiles": 0,
+                "metadata_mismatch_urls": [],
+                "extra_tiles": 0,
+                "source_coverage_verified": False,
+                "terrain": {
+                    "mesh_sha256": "b" * 64,
+                    "terrain_surface_support_complete": True,
+                    "receiver_height_range_verified": True,
+                },
+                "orthophoto": {
+                    "manifest_sha256": "c" * 64,
+                    "orthophoto_support_complete": True,
+                },
+            },
+        )
+        native_chunks = grid_plan()
+        for chunk in native_chunks:
+            path = cls.base / "core/source-reference" / f"{chunk['id']}.png"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(cls.directory / "textured" / f"{chunk['id']}.png", path)
+            chunk["assets"] = {
+                "source-reference": {
+                    "core": {
+                        "path": path.relative_to(cls.base).as_posix(),
+                        "sha256": release.digest(path),
+                        "width": 1024,
+                        "height": 1024,
+                    }
+                }
+            }
         cls.receipt = cls.base / "source-receipt.json"
         pilot.write_json(
             cls.receipt,
             {
+                "config": config,
+                "global_bounds_px": list(expansion.BOUNDS),
+                "image_local_origin_global_px": list(expansion.BOUNDS[:2]),
+                "ai_styling": False,
+                "source_coverage_verified": False,
+                "geometry": {"mesh_count": 25},
+                "provenance": {
+                    "input_sha256": {
+                        "building-manifest": "a" * 64,
+                        "terrain-mesh": "b" * 64,
+                        "ground-manifest": "c" * 64,
+                    }
+                },
+                "chunks": native_chunks,
+                "source_support": {
+                    "path": cls.support.name,
+                    "sha256": release.digest(cls.support),
+                    "selection_complete": True,
+                    "terrain_support_complete": True,
+                    "orthophoto_support_complete": True,
+                    "source_coverage_verified": False,
+                },
                 "source_provenance": cls.source_provenance,
                 "status": "complete",
                 "source_config_sha256": load_config(cls.config).fingerprint,
@@ -376,6 +438,11 @@ class ExpansionTests(unittest.TestCase):
         self.assertIn("selected from Shinjuku only", actual["context_coverage"])
         evidence = self.evidence()
         evidence["source_provenance"] = actual
+        receipt_path = self.work / evidence["source_proof"]["receipt"]["path"]
+        receipt = release.read_json(receipt_path)
+        receipt["source_provenance"] = actual
+        pilot.write_json(receipt_path, receipt)
+        evidence["source_proof"]["receipt"]["sha256"] = release.digest(receipt_path)
         pilot.write_json(self.work / "evidence.json", evidence)
         _, _, public, _ = self.validate()
         self.assertEqual(public["source_provenance"], actual)
@@ -470,6 +537,110 @@ class ExpansionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "evidence schema"):
             self.validate()
 
+    def test_retained_source_support_proof_is_required_and_hash_bound(self):
+        original = self.evidence()
+        for mutation in ("missing", "bad-hash", "unsafe-path"):
+            evidence = json.loads(json.dumps(original))
+            if mutation == "missing":
+                del evidence["source_proof"]
+            elif mutation == "bad-hash":
+                evidence["source_proof"]["support"]["sha256"] = "0" * 64
+            else:
+                evidence["source_proof"]["receipt"]["path"] = "../receipt.json"
+            pilot.write_json(self.work / "evidence.json", evidence)
+            with self.assertRaises(ValueError):
+                self.validate()
+
+    def test_source_support_claims_cannot_hide_failed_or_mismatched_audit(self):
+        original = self.evidence()
+        support_path = self.work / original["source_proof"]["support"]["path"]
+        receipt_path = self.work / original["source_proof"]["receipt"]["path"]
+        original_audit, original_receipt = (
+            release.read_json(support_path),
+            release.read_json(receipt_path),
+        )
+        for key, value in (
+            ("missing_tiles", 1),
+            ("building_manifest_sha256", "d" * 64),
+            ("tile_selection_complete", False),
+        ):
+            audit = {**original_audit, key: value}
+            pilot.write_json(support_path, audit)
+            checksum = release.digest(support_path)
+            receipt = json.loads(json.dumps(original_receipt))
+            receipt["source_support"]["sha256"] = checksum
+            pilot.write_json(receipt_path, receipt)
+            evidence = json.loads(json.dumps(original))
+            evidence["source_proof"]["support"]["sha256"] = checksum
+            evidence["source_proof"]["receipt"]["sha256"] = release.digest(receipt_path)
+            pilot.write_json(self.work / "evidence.json", evidence)
+            with self.assertRaisesRegex(ValueError, "support audit"):
+                self.validate()
+        # The art helper must reject the same invalid support before opening frames.
+        bad_receipt = self.root / "invalid-source.json"
+        shutil.copyfile(receipt_path, bad_receipt)
+        shutil.copyfile(support_path, self.root / "source-support.json")
+        with self.assertRaisesRegex(ValueError, "support audit"):
+            expansion.export(
+                self.work,
+                self.config,
+                bad_receipt,
+                self.work / "review.json",
+                self.prompt,
+            )
+
+    def test_native_support_receipt_requires_boolean_gates_and_real_input_hashes(self):
+        receipt = release.read_json(self.receipt)
+        audit = release.read_json(self.support)
+        config = load_config(self.config)
+        receipt["source_support"]["selection_complete"] = 1
+        with self.assertRaisesRegex(ValueError, "explicit booleans"):
+            release.validate_native_support_receipt(
+                receipt, audit, config, release.digest(self.support)
+            )
+        receipt["source_support"]["selection_complete"] = True
+        receipt["provenance"]["input_sha256"]["building-manifest"] = "not-a-digest"
+        audit["building_manifest_sha256"] = "not-a-digest"
+        with self.assertRaisesRegex(ValueError, "actual input SHA256"):
+            release.validate_native_support_receipt(
+                receipt, audit, config, release.digest(self.support)
+            )
+
+    def test_native_receipt_binds_final_source_cores_and_rejects_private_locations(
+        self,
+    ):
+        original = self.evidence()
+        path = self.work / original["source_proof"]["receipt"]["path"]
+        original_receipt = release.read_json(path)
+        for mutation in (
+            "wrong-core",
+            "local",
+            "private-url",
+            "private-uri",
+            "traversal",
+        ):
+            receipt = json.loads(json.dumps(original_receipt))
+            if mutation == "wrong-core":
+                receipt["chunks"][0]["assets"]["source-reference"]["core"]["sha256"] = (
+                    "0" * 64
+                )
+            elif mutation == "local":
+                receipt["note"] = "Input /Users/example/private/source.json"
+            elif mutation == "private-url":
+                receipt["note"] = "Source https://internal.example.invalid/source"
+            elif mutation == "private-uri":
+                receipt["note"] = "Source ssh://internal.example.invalid/source"
+            else:
+                receipt["chunks"][0]["assets"]["source-reference"]["core"]["path"] = (
+                    "../private.png"
+                )
+            pilot.write_json(path, receipt)
+            evidence = json.loads(json.dumps(original))
+            evidence["source_proof"]["receipt"]["sha256"] = release.digest(path)
+            pilot.write_json(self.work / "evidence.json", evidence)
+            with self.assertRaises(ValueError):
+                self.validate()
+
     def test_expansion_repair_cap_excludes_but_preserves_parent_history(self):
         (self.work / "repairs").mkdir(exist_ok=True)
         pilot.write_json(
@@ -516,6 +687,14 @@ class ExpansionTests(unittest.TestCase):
         self.assertEqual(
             (version / "parent/release.json").read_bytes(),
             (self.parent_fixture.version() / "release.json").read_bytes(),
+        )
+        self.assertEqual(
+            (version / "source-proof/native-source.json").read_bytes(),
+            self.receipt.read_bytes(),
+        )
+        self.assertEqual(
+            (version / "source-proof/source-support.json").read_bytes(),
+            self.support.read_bytes(),
         )
         self.assertFalse((version / "parent/pyramid").exists())
         self.assertEqual(

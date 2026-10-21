@@ -137,6 +137,185 @@ def verify_expansion_database(path, evidence):
         )
 
 
+def validate_public_source_proof(value):
+    """Reject private locations and unsafe file references before retaining JSON."""
+    from urllib.parse import urlsplit
+
+    public_hosts = {
+        "assets.cms.plateau.reearth.io",
+        "www.geospatial.jp",
+        "www.mlit.go.jp",
+        "docs.plateauview.mlit.go.jp",
+        "opendatacommons.org",
+        "overpass-api.de",
+        "www.openstreetmap.org",
+    }
+    pending = [(value, "", 0)]
+    seen = 0
+    while pending:
+        item, key, depth = pending.pop()
+        seen += 1
+        if seen > 100_000 or depth > 40:
+            raise ValueError("Source proof exceeds bounded JSON complexity")
+        if isinstance(item, dict):
+            for name, child in item.items():
+                pending.append((name, "", depth + 1))
+                pending.append((child, name, depth + 1))
+        elif isinstance(item, list):
+            pending.extend((child, key, depth + 1) for child in item)
+        elif isinstance(item, str):
+            if item:
+                text(item, 100_000)
+            if item.startswith(("/", "~/", "\\\\")) or re.match(
+                r"[a-zA-Z]:[\\/]", item
+            ):
+                raise ValueError("Source proof cannot contain absolute local locations")
+            for url in re.findall(r"[a-zA-Z][a-zA-Z0-9+.-]*://[^\s<>\"']+", item):
+                parsed = urlsplit(url)
+                if (
+                    parsed.scheme != "https"
+                    or parsed.hostname not in public_hosts
+                    or parsed.username
+                    or parsed.password
+                    or parsed.port not in (None, 443)
+                ):
+                    raise ValueError(
+                        "Source proof URL is not an approved public source"
+                    )
+            if key == "path" or key.endswith("_path"):
+                safe_file(Path("."), item)
+        elif isinstance(item, float) and not math.isfinite(item):
+            raise ValueError("Source proof must contain finite values")
+
+
+def validate_native_support_receipt(receipt, audit, config, support_sha256):
+    """Validate the source finalizer's contract without trusting a passed flag alone."""
+    from atlas import parse_config
+    from render_expansion_source import validate_support_audit
+
+    validate_public_source_proof(receipt)
+    validate_public_source_proof(audit)
+    support = receipt.get("source_support")
+    if (
+        receipt.get("status") != "complete"
+        or receipt.get("native_resolution_px") != [5120, 5120]
+        or receipt.get("global_bounds_px") != list(EXPANSION_BOUNDS)
+        or receipt.get("image_local_origin_global_px") != list(EXPANSION_BOUNDS[:2])
+        or receipt.get("upscaled") is not False
+        or receipt.get("ai_styling") is not False
+        or receipt.get("source_coverage_verified") is not False
+        or receipt.get("core_reassembly_pixel_exact") is not True
+        or receipt.get("source_config_sha256") != config.fingerprint
+        or parse_config(receipt.get("config")).fingerprint != config.fingerprint
+        or not isinstance(support, dict)
+        or support
+        != {
+            "path": "source-support.json",
+            "sha256": support_sha256,
+            "selection_complete": True,
+            "terrain_support_complete": True,
+            "orthophoto_support_complete": True,
+            "source_coverage_verified": False,
+        }
+        or audit.get("source_coverage_verified") is not False
+    ):
+        raise ValueError(
+            "A complete matching native receipt and bound support audit are required"
+        )
+    if any(
+        type(support[key]) is not bool
+        for key in (
+            "selection_complete",
+            "terrain_support_complete",
+            "orthophoto_support_complete",
+            "source_coverage_verified",
+        )
+    ):
+        raise ValueError("Source support completion flags must be explicit booleans")
+    inputs = receipt.get("provenance", {}).get("input_sha256", {})
+    if any(
+        not isinstance(inputs.get(key), str) or not HASH.fullmatch(inputs[key])
+        for key in ("building-manifest", "terrain-mesh", "ground-manifest")
+    ):
+        raise ValueError(
+            "Native source support requires actual input SHA256 identities"
+        )
+    validate_support_audit(receipt, audit)
+    if parse_config(audit.get("canonical_config")).fingerprint != config.fingerprint:
+        raise ValueError(
+            "Support audit canonical configuration differs from the native frame"
+        )
+    chunks = receipt.get("chunks")
+    if (
+        not isinstance(chunks, list)
+        or len(chunks) != 25
+        or any(not isinstance(chunk, dict) for chunk in chunks)
+    ):
+        raise ValueError("Native receipt must bind every finalized source core")
+    by_id = {chunk.get("id"): chunk for chunk in chunks}
+    expected = {
+        f"x{x}_y{y}": [x * CORE, y * CORE, (x + 1) * CORE, (y + 1) * CORE]
+        for y in range(-1, 4)
+        for x in range(-1, 4)
+    }
+    if {ident: chunk.get("bounds_px") for ident, chunk in by_id.items()} != expected:
+        raise ValueError("Native receipt source grid differs from the expansion")
+    for chunk in chunks:
+        core = chunk.get("assets", {}).get("source-reference", {}).get("core", {})
+        if (
+            core.get("width") != CORE
+            or core.get("height") != CORE
+            or not isinstance(core.get("sha256"), str)
+            or not HASH.fullmatch(core["sha256"])
+            or not isinstance(core.get("path"), str)
+        ):
+            raise ValueError(
+                "Native receipt requires exact source core file identities"
+            )
+        safe_file(Path("."), core["path"])
+    return by_id
+
+
+def validate_source_proof(evidence, base, config, chunks):
+    proof = evidence.get("source_proof")
+    if not isinstance(proof, dict) or set(proof) != {"receipt", "support"}:
+        raise ValueError("Expansion requires retained native source and support proofs")
+    files = {}
+    for key, name in (
+        ("receipt", "source-proof/native-source.json"),
+        ("support", "source-proof/source-support.json"),
+    ):
+        record = proof[key]
+        if (
+            not isinstance(record, dict)
+            or set(record) != {"path", "sha256"}
+            or record["path"] != name
+            or not isinstance(record["sha256"], str)
+            or not HASH.fullmatch(record["sha256"])
+        ):
+            raise ValueError(
+                "Source proof requires fixed public relative paths and SHA256"
+            )
+        path = safe_file(base, name)
+        if digest(path) != record["sha256"]:
+            raise ValueError("Retained native source proof checksum mismatch")
+        files[name] = path
+    receipt = read_json(files["source-proof/native-source.json"])
+    audit = read_json(files["source-proof/source-support.json"])
+    native = validate_native_support_receipt(
+        receipt, audit, config, proof["support"]["sha256"]
+    )
+    if receipt.get("source_provenance") != evidence["source_provenance"]:
+        raise ValueError("Published source provenance differs from the native receipt")
+    for chunk in chunks:
+        core = native[chunk["id"]]["assets"]["source-reference"]["core"]
+        if core["sha256"] != chunk["outputs"]["textured"]["sha256"]:
+            raise ValueError(
+                "Published Source pixels differ from finalized native source cores"
+            )
+    return files
+
+
 def canonical(value):
     return json.dumps(
         value,
@@ -629,7 +808,7 @@ def validate_inputs(index_path, config_path, evidence_path):
         "source_comparison",
     }
     if expanded:
-        fields.update({"parent", "source_provenance"})
+        fields.update({"parent", "source_provenance", "source_proof"})
     if (
         not isinstance(evidence, dict)
         or set(evidence) != fields
@@ -671,6 +850,9 @@ def validate_inputs(index_path, config_path, evidence_path):
     if expanded:
         validate_source_provenance(evidence["source_provenance"])
         parent_sources = validate_expansion_parent(evidence, evidence_path.parent)
+        parent_sources.update(
+            validate_source_proof(evidence, evidence_path.parent, config, chunks)
+        )
     normalized = json.loads(json.dumps(evidence))
     outputs = {}
     sources = dict(parent_sources)
