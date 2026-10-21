@@ -1,0 +1,1964 @@
+{
+  "schema_version": 1,
+  "status": "complete-unapproved",
+  "art_approval": "pending-owner-review",
+  "ai_styling": false,
+  "external_generation_cost": 0,
+  "source_geometry_changed": false,
+  "procedural_facade_details": true,
+  "mapped_vegetation_representation": true,
+  "source_config_sha256": "4bc0d6b54304595b613751f881c63d6bf9e82738eb9ec51b3308b351c5c842a2",
+  "source_atlas_bounds_px": [
+    0,
+    0,
+    2400,
+    2400
+  ],
+  "output_resolution_px": [
+    1024,
+    1024
+  ],
+  "camera": {
+    "bounds_px": [
+      0,
+      0,
+      2400,
+      2400
+    ],
+    "render_bounds_px": [
+      0,
+      0,
+      2400,
+      2400
+    ],
+    "crop_box_px": [
+      0,
+      0,
+      2400,
+      2400
+    ],
+    "resolution_px": [
+      2400,
+      2400
+    ],
+    "target_enu": [
+      0.0,
+      0.0,
+      120.08777160644532
+    ],
+    "location_enu": [
+      1500.0,
+      -1500.0,
+      1620.0877716064454
+    ],
+    "right_enu": [
+      0.7071067811865475,
+      0.7071067811865475,
+      -0.0
+    ],
+    "up_enu": [
+      -0.408248290463863,
+      0.408248290463863,
+      0.816496580927726
+    ],
+    "forward_enu": [
+      -0.5773502691896257,
+      0.5773502691896257,
+      -0.5773502691896257
+    ],
+    "ortho_scale_m": 1260.0,
+    "sensor_fit": "HORIZONTAL",
+    "source_footprint_enu_m": [
+      -2037.1543127306713,
+      -2346.9787695177806,
+      2346.9787695177806,
+      2037.1543127306713
+    ]
+  },
+  "samples": 128,
+  "seed": 0,
+  "blender_version": "5.2.0 LTS",
+  "render_engine": "Cycles CPU, Standard color management, no denoising, no adaptive sampling",
+  "presets": {
+    "schema_version": 1,
+    "status": "unapproved-structural-studies",
+    "presets": [
+      {
+        "id": "atlas-ink",
+        "title": "A. Atlas ink",
+        "description": "Warm ivory streets, blue-gray towers, jade canopy and dark facade marks. Crisp architectural illustration.",
+        "facade": "#b5c7ca",
+        "roof": "#eee7d8",
+        "ground": "#d9d3c3",
+        "roof_normal_z_min": 0.65,
+        "sun_energy": 1.25,
+        "sun_angle_degrees": 4,
+        "world_strength": 0.8,
+        "window": "#456671",
+        "road": "#f0eada",
+        "water": "#7fbdc5",
+        "vegetation": "#5d9275",
+        "bark": "#74624b",
+        "groundcover": "#b9c997",
+        "window_spacing_m": 3.6,
+        "floor_height_m": 3.7
+      },
+      {
+        "id": "garden-city",
+        "title": "B. Garden city",
+        "description": "Soft mineral blocks, warm rooftops and a clear green park. Calm illustrated architectural map.",
+        "facade": "#cbd5d0",
+        "roof": "#d9b594",
+        "ground": "#c9c3ae",
+        "roof_normal_z_min": 0.65,
+        "sun_energy": 1.0,
+        "sun_angle_degrees": 10,
+        "world_strength": 0.9,
+        "window": "#7d9b9c",
+        "road": "#e8e1cb",
+        "water": "#90c1c2",
+        "vegetation": "#82a16a",
+        "bark": "#7f6b4f",
+        "groundcover": "#b7be8c",
+        "window_spacing_m": 4.2,
+        "floor_height_m": 3.7
+      },
+      {
+        "id": "terracotta",
+        "title": "C. Terracotta blocks",
+        "description": "Muted rose towers, cream rooftops, deep teal glazing and olive park canopy. Graphic editorial map.",
+        "facade": "#c6a194",
+        "roof": "#f0ddbd",
+        "ground": "#d5c3a8",
+        "roof_normal_z_min": 0.65,
+        "sun_energy": 1.15,
+        "sun_angle_degrees": 6,
+        "world_strength": 0.8,
+        "window": "#537778",
+        "road": "#efe1c4",
+        "water": "#88b9b0",
+        "vegetation": "#7c9768",
+        "bark": "#7b654e",
+        "groundcover": "#bdc38b",
+        "window_spacing_m": 3.8,
+        "floor_height_m": 3.6
+      }
+    ]
+  },
+  "geometry": {
+    "mesh_count": 138,
+    "vertex_count": 2058792,
+    "bounds_enu_m": [
+      -1777.3320272674534,
+      -1557.1378088792806,
+      54.94338735271458,
+      1312.5587090057343,
+      1837.114643902225,
+      332.28668004682413
+    ],
+    "source_geometry_cropped": false,
+    "context": {
+      "mesh_count": 101,
+      "vertex_count": 526818,
+      "bounds_enu_m": [
+        -6060.454036794546,
+        -2548.70257691519,
+        30.663200102568226,
+        8749.590217075089,
+        2870.921514075635,
+        103.5215780847036
+      ],
+      "source_geometry_cropped": false,
+      "height_adjustment_m": 0,
+      "vertical_alignment_reviewed": false,
+      "vertical_alignment_diagnostics": {
+        "definition": "Source vertex ENU-up minus vertical terrain intersection ENU-up, in metres",
+        "interpretation": "Descriptive separation only; bridges, water surfaces and source dates require review",
+        "height_adjustment_m": 0,
+        "reviewed": false,
+        "terrain_height_range_enu_m": [
+          53.33414840698242,
+          82.59772491455078
+        ],
+        "sample_cap_per_semantic": 2048,
+        "semantics": {
+          "transportation": {
+            "source_vertex_count": 452253,
+            "tested_vertex_count": 2048,
+            "terrain_intersection_count": 1971,
+            "outside_terrain_count": 77,
+            "source_minus_terrain_m": {
+              "minimum_m": -7.4248046875,
+              "p10_m": -0.2326812744140625,
+              "median_m": 0.00850677490234375,
+              "p90_m": 0.34051513671875,
+              "maximum_m": 25.871192932128906
+            }
+          },
+          "vegetation": {
+            "source_vertex_count": 46926,
+            "tested_vertex_count": 2048,
+            "terrain_intersection_count": 2048,
+            "outside_terrain_count": 0,
+            "source_minus_terrain_m": {
+              "minimum_m": -2.533660888671875,
+              "p10_m": 1.7155914306640625,
+              "median_m": 6.9000701904296875,
+              "p90_m": 10.507431030273438,
+              "maximum_m": 15.465576171875
+            }
+          },
+          "water": {
+            "source_vertex_count": 27639,
+            "tested_vertex_count": 2048,
+            "terrain_intersection_count": 148,
+            "outside_terrain_count": 1900,
+            "source_minus_terrain_m": {
+              "minimum_m": -30.062835693359375,
+              "p10_m": -28.658721923828125,
+              "median_m": -6.589141845703125,
+              "p90_m": -0.0761566162109375,
+              "maximum_m": 2.7211151123046875
+            }
+          }
+        }
+      }
+    }
+  },
+  "provenance": {
+    "input_sha256": {
+      "building-manifest": "5ea7f3cf926e62395913e243a00af114ae87790601b6e2cb45b513c9c6ba4c35",
+      "building-glb-0": "77bf8f709a8786a7a0fa25f69632d66785ad566816a1a051b90543cf582950ba",
+      "building-glb-1": "848e958ded45ce47971a07b6a3eccca589d5b4444e13f0c2ae9bfa8ee525577f",
+      "building-glb-2": "f021052965b9d32f86c0d353e0acdb3b53cbd50bf02d2a282aa0637a9f71eaf1",
+      "building-glb-3": "98fc31c2bc3e965d33d35dfd745949670ed1c517b70e8f12d71982004cbd7eb6",
+      "building-glb-4": "ce85796a6293ad890eba4f0a4b234e9022424f7e9de5a2dcff4aab51f199963a",
+      "building-glb-5": "df2e21091e05c6ba083ff652f365ad3f2d87f807bbf170485bc0f4ecca7e8561",
+      "building-glb-6": "077cbf586637e7ec80cae6ab33327143eaf78fb09be2bd09e26976fa0e15607e",
+      "building-glb-7": "4b835098804ebbff36c81f7eaf2531dbc762a4be43d9792f9045cf2b936ea23e",
+      "building-glb-8": "27a6cb52f77c8513e541ebeba6f45c88406992aaf52e0eb96bb2c2741d6a911c",
+      "building-glb-9": "a2c0e63951ecf93e6f6e5cf2b55ca9b36f0dfcf721a9f74d6b88344059db00fd",
+      "building-glb-10": "1677c15d8d9d141d444b4df341243a569e633398b164b50666e6d0e1024197dd",
+      "building-glb-11": "ac46cc64f7c841165bf194fdab0e6024aea90d1c5da77430b2e24fa92b518961",
+      "building-glb-12": "8bf30e497d48f4175f7838cb0f017b56dffb6b8d98cb0a250797d7cdfca70ad1",
+      "building-glb-13": "8d13a21de164350987f50d5194073062e039d032bb1be4180714c47b1f1da2c7",
+      "building-glb-14": "abaa5b806795bf6473a0d39f7d73e3827d7501802882ab82005b3bf1372ab287",
+      "building-glb-15": "dfd18f9ee2a3e22015478f1d971b28338d385fae03ec6b924d939ca4b65e1f41",
+      "building-glb-16": "0691975104d72d60c327aaefdeaf0358c8cda4d175c1745ca0c75e0a3bdfcd2b",
+      "building-glb-17": "827e839a5f1a8e44bd55b4210a8a0a557e1eef49c251f6c50293d637700d30da",
+      "building-glb-18": "35765d7b29b8f98169b1f55aed59802e6a0a2b4cf387859a5dfe44e43a6f8c10",
+      "building-glb-19": "089b2e328daf1c6800e712225c2b87b48cc37145ba2e1b35037a938c5de3efbb",
+      "building-glb-20": "3fa86aa66814e18c2a991b496d740062e3cdad028a9dccf24596dafc05239079",
+      "building-glb-21": "4d2e32f8d79b20358de73fd55879f00e9f6629e0d3229a94974cdcddcaad758f",
+      "building-glb-22": "d24fb6e7175e9f2ab0471035f237d17e5e0813371661b729896f21bc8b8e54d7",
+      "building-glb-23": "51714836af5d9a61ea8946607ec742e3044b455fc704a33739c05b1da8cf5725",
+      "building-glb-24": "afef0cecc034ff070cb41e4e64735ec01fd5108aeea50b6e62989d1e3cace2b0",
+      "building-glb-25": "d070c4be353c0b6f6def3902a594fc3697287d1db08d5f6c66e8f005d3433450",
+      "building-glb-26": "d8a0d4c69f6a59ac61f832f5827ca601fc6b7083fcb69f8feb002ec6d8b8bec4",
+      "building-glb-27": "f575cb4d24111d70304f3ba86216596007c999ac072439347d4f76bf10358ce4",
+      "building-glb-28": "a5e159bce90d7fd48c8e7aa8f9d89c2207037e70dec76494117ee0a367f4f5cc",
+      "building-glb-29": "523087ea2568823a8fe1572d395d0d0e396438c03100f8246225e0331b0563d5",
+      "building-glb-30": "bd33d551d4abdc606ec3c87b27fa8f760c1157c914bd8f6bd361323d9f28c50b",
+      "building-glb-31": "cf6dd571ed87c1f3e96671741d4f00a31e2638f6e6f5296d0916c8f3b90f6b04",
+      "building-glb-32": "338c55a0c32e8fc2d7f5c7f21d3586fca1ed832ce7330c159e4ff79a5befec21",
+      "building-glb-33": "0450d0de9abdddf66ad542a53c5682133953d79aae8b002143962848f8dc405b",
+      "building-glb-34": "f37ff25211800d604a720dc16a76d6fa016d09d776a013a9cafbfb16b2fa8ded",
+      "building-glb-35": "8e6201396661b8d81592deaa5f0d5911bc85cdfb20c39403dfd656781125b559",
+      "building-glb-36": "c69ad5225c1b36a71934aed984290821800e967aaaa1e803727d1a9134caf6c8",
+      "building-glb-37": "2ec7556d6406b7d290de43ed0280df27e5e7cc65d989a09c3e4e7f909b7240e3",
+      "building-glb-38": "a62dc6bae1f41c01980007a929f87a00a5938f66ae31feb14d608ea1fa0355d9",
+      "building-glb-39": "69a23784e4f6a5bc0f4d84d1a01b087dc912a4805d305ddbfbfe9ead56197d04",
+      "building-glb-40": "3aaab0e718b801d70472441ace469541668972539a264e5578e510b6a7626c60",
+      "building-glb-41": "01a3ebae3dc485ff4f1a01d6e064d4d251d690facc8e73bc50e1470ee8250847",
+      "building-glb-42": "775c82c04a04347f007f59d2790572adac2bee40f797c251e528c604ef858538",
+      "building-glb-43": "ffec573fe099aafb0a8b7db3057f8f2e4495b73395ed13cb1d2091b1d019b139",
+      "building-glb-44": "1c5bb776d4bd81142608493813e73fee3de661fa99dd7c153356bae54b2d03cc",
+      "building-glb-45": "6118798ad5b85d26c7f6320eb07fb9c6c12c0741c23270a8510f9526893fed70",
+      "building-glb-46": "d9d470c4cb385a6bfe98447bd6a823159772bb9d89938539a7bcd60039262044",
+      "building-glb-47": "0f9282422919d434e888c0da1a49df412cb5e05943a37a276047f288e3fbab05",
+      "building-glb-48": "28c084b62d62920707a1ae063257b2b045c0bce70283fe9943958c1bee0a3daf",
+      "building-glb-49": "6cf9c4e68cf93959ca512d851af07827d27d5d975deabbe27412d0c3453dac76",
+      "building-glb-50": "0e6379b25a7727508768cd76b0d6a713a78bb35a9f8d30372c5f109569569abd",
+      "building-glb-51": "e6eeead999f30b27e8bd5666cad4bf331f7fe5c7a31a2bc74636ec407f42492d",
+      "building-glb-52": "f74fdd094814dfd30af38c341877ba697d9ff2cc70d3bbb7018f6e6c0197a93b",
+      "building-glb-53": "31436e343c56ad79d5a8bf4e47176e0b33bc588a9d0f44c9952aafa67e66701a",
+      "building-glb-54": "f916033572cfd2d091836352321e2006e060b2e3674732cb467a286bf658795a",
+      "building-glb-55": "e95a948eaf977307458e3ba90a60840963ebd9db029ba1fa1047fab75e5382bc",
+      "building-glb-56": "4d95a8a12e330781eb7d1e7556d65715811eefdca0de42afdac170f9cc1aec08",
+      "building-glb-57": "56542e9016ff5333be73d63b93d7ebf03354c0a71fb85d7cce16e6af881f3d46",
+      "building-glb-58": "222af1c5a36e696b7fc5d593e0cf53c704832acd69754ee3c548b6404ed88da8",
+      "building-glb-59": "edcdb2408178ba9071b1ed3e6e07220da6208afcea32674fa3dfaff6bff1e1ba",
+      "building-glb-60": "4575a4fdc518d97c68fd3666b882e08154b07de68515955685ac7481a3ec54d2",
+      "building-glb-61": "1336c306c8068f47b1c1b9dcd84e232a91a276c30776fb2e38cc569971382d5a",
+      "building-glb-62": "6c658dd5ff79685f0e977d050a3d087e3ffcce2afa52cf0d8e9cab4b3e7e658b",
+      "building-glb-63": "1ef93fce0df671451004d45011a10cc6b0b7caeffd77bdc4421077d125d950c3",
+      "building-glb-64": "6fd0e298e68c8c69e2bf45580251db9af9cb43350494e66d3b24212991c6809c",
+      "building-glb-65": "c5ae1ede5bcfbb616b23f9731453d1b8bff2b0f8af1f3a9a779754c5945dcf47",
+      "building-glb-66": "9e54327bcf3af4e110da794e02bfd13dce84813b4b8d779bb619d32595cf17ff",
+      "building-glb-67": "1f503b41bb00cc1460463de4a77d523ba15902a5bd4525b74bd7a8235b443eb5",
+      "building-glb-68": "5fc559ec70f6c4d6e5d29fbdf8f18ca43411ac286f83867ba632ec98979adb91",
+      "building-glb-69": "376e18a39bf093d3f5b58fc9238d328c0c991e9bd81aed037c21efff58d98610",
+      "building-glb-70": "54837c4aa2dc9eb9033f67aefae32289f8ad56f73552ee85f233b7aa534356ad",
+      "building-glb-71": "b9f518d83c2b5f6532d2760cb5593b655cb6db3e3e61c3664005ce4fd4761552",
+      "building-glb-72": "c8a4d1417cf1e1c9d04f859209000f7a8f55e2dd72ad90dece99688e0a248a44",
+      "building-glb-73": "f370c77606a80daabb3be480361c934af408ef9f6981c11d86d02142d153cec4",
+      "building-glb-74": "16c3fd1c3782af0ed53961c4c646fe5473b42fe97a8e30408b15fc6116fa84c3",
+      "building-glb-75": "c5df8911051daa5eb7f6f931985e985a3b23c250400fcb19291b16ce90cf80ff",
+      "building-glb-76": "7a6c8af1c2dc345c4ebb1aeab50e7886316d682179e6993eb18fdbd48a6e046b",
+      "building-glb-77": "f75507384fafeab51153b20d57f93389b4576cf09e17a4b89a1ffae2719460bc",
+      "building-glb-78": "6a6abaeee742587c849b30aa1d110eca1c0e9cb496d8707197a9bf543fa4e495",
+      "building-glb-79": "2e561fce5d7d6acc96ddfcb77bfcdd0888a81a6527abd728773877f6a962974a",
+      "building-glb-80": "d87c42ca8d80f066b3092db68b011db626e92925875e2b2b730b4a5a509c11da",
+      "building-glb-81": "c933915e69310e1d19a8c3ade6396beb301d47766d291a342c5c78ad00c2874e",
+      "building-glb-82": "2f6bbdcf04fb43979d92fe3e82f802d53f0ff3eb5e931f48e445cd2008083cc9",
+      "building-glb-83": "a7e820ebc784b4177e4f025d92072071a652e9282234aa069e3c343ce1006819",
+      "building-glb-84": "1dc7a597f6856662ac451a606141a1bf8972d4948dbfdfa44d65b8dc76004c56",
+      "building-glb-85": "3b560b900e55abe814f323a3a43c88ff0f95afecf889db21578487a7794a2fff",
+      "building-glb-86": "dc7291077026bd96791966d2f4f3a6fbf11f529a94aea611f280961f878b2449",
+      "building-glb-87": "0a02f17b5a59d5accbcac1b1eae5eefa1cb04c682bd9e5c83d217220508687fe",
+      "building-glb-88": "dd9bb393f096c74cd0a7b5faec644270390cb4078859808ec9c947203e060165",
+      "building-glb-89": "332121bcc021d31f8de2f2c93aa3373890d3e4a7a70286ba86cd4b002b74a0af",
+      "building-glb-90": "fb8c8c0387bd84d452116f1ca80241202d75b129d0d06ee18989ffc58e7bbdb4",
+      "building-glb-91": "28277544ee03b93e771d9099a60800c95ac266883d869e28614cbd8d764e3687",
+      "building-glb-92": "efb9b810cee5f651f37821e8f5d23d3e19af6b2302dd3c3d371ccd5f79623627",
+      "building-glb-93": "01c1feb5e4de052ee00cc1d32900f004053f7d227b8413c1b4d4a21109f79dd2",
+      "building-glb-94": "4b57133f66543a46c6ee8dffffef952149a4b21e8b427e7e306691c79d4afc8e",
+      "building-glb-95": "c6b75e6f459dcb1a520dfa4d02b83ae0d1d0b61a9583246b1de9a431ed8af5ab",
+      "building-glb-96": "94e2bf394d9f1cdfcec530d8fa615f074c1c65d62777896c293e03bed949eea0",
+      "building-glb-97": "60ec071f6d5b87030647b4f62f48675b0a0925200e385f388ca1447e55abfa07",
+      "building-glb-98": "1532e48ffb6ff17523afc7ced2cc8c58412477685e2603ee219a2230f2c49831",
+      "building-glb-99": "766a94d3017ff91a0445cbbeff92ed5848260a5d2de3ae894793e498005dbdae",
+      "building-glb-100": "761a9cb116fda1e18cba0880dba11dd549b261e7b1a458777c537bd298018d4c",
+      "building-glb-101": "bde8ba72883aad3cf2d32505d6e3e2f719e823db68e2bee15a436adee15b5f6c",
+      "building-glb-102": "6f3b9bb2e424bdcc622f702b31af976bd22f069171fc0b574a78907d872d0371",
+      "building-glb-103": "4aa9d71c8b94d3ff73d6863ec430bf3bcce510cc10bd07d804b73a419127e0d4",
+      "building-glb-104": "a6c5db5548d71006ec1298c6561c2871d656c2211f2a795c1da965b26375d094",
+      "building-glb-105": "a55db898653c286a0ba92b6ec956b795a78f78cb449e107efe24db4dadff96a3",
+      "building-glb-106": "4b5bc81161509ab5906ee246a304fc04fe09d52a7da6f55a55c3740c02c2fb42",
+      "building-glb-107": "d6afd49029fd31f2dae36c56b8d41d4fc548d25acacd1ef4ee3646923c8837cf",
+      "building-glb-108": "345eca9c42fcde1b65f9cd8d8fb5f5d98ab580d8758d0d68326f1f552baeb126",
+      "building-glb-109": "0faa86e7da7b12edb71a59f03ffdbc0fe31a98546d61737b8ef48c04e4e81d42",
+      "building-glb-110": "0013aee57af15c0f0281c47fab5121cf8d747af5dda7fb7e56162113583cf465",
+      "building-glb-111": "a687217e2e4600f674b1e43b1b5bce1a583567910a761c5aa7d3aabfcbf5c30a",
+      "building-glb-112": "b73d98b0e08be8be213c956894a8ecc9b8ca849d0cae6a0860ea13e809ab6d4c",
+      "building-glb-113": "611e49153968c19709a70b7bb19f271d233a647999476df0447988a305e443a2",
+      "building-glb-114": "92e018b6cb03ab418f4ca92c0b59a48b4a1cfdd4c04f6d3e5a1284982002b478",
+      "building-glb-115": "3fd9a831542368230ac1dfedbd75fd95e059951767afc80663112b9e5e3c9b31",
+      "building-glb-116": "128cdaa2798a71cf8d9f778d28c5de8d790f1e9015e0542669ced916e4f1abf2",
+      "building-glb-117": "b1d3c8cf08cef0e086742660f3c698433a9d210d5959bd421fb29328c54227a8",
+      "building-glb-118": "39de1c4c56b901f58478003bfde7655717222e28fc2b336dabfe7bfe016ce1e5",
+      "building-glb-119": "f03dff214d972a358bc49e49dabac1bc96463c846f4c55f167a423c26192535b",
+      "building-glb-120": "f77e2d3d018ffefa08d3d0275256a3556b5c3e7b418575bae3e0ac5d96d593d6",
+      "building-glb-121": "2014cc359d7cacf3df960c4df1423fc2f8cdf71bcc089f8bee08ab5ea7203581",
+      "building-glb-122": "1de63fdd32c32544ac9f5782c8b8c6ab80b22c01f6738cc006d9837ace9d8b27",
+      "building-glb-123": "6330a514eeff782cee3bb95ccdfc4b8a0f22e6b69bbf3a66b8b5e1640bdba135",
+      "building-glb-124": "a172d9b7e8c897c5d90b6c54a3018d1703f40b349ea0541c6f3335a21c684298",
+      "building-glb-125": "1ba265573aafb775a6be3e68bfb77fa0250b0ca7d694190c231c9e3fee2065cf",
+      "building-glb-126": "83cb9b08a16e900d475a641286af46b43a50d9192c65fb28614996af8e144c40",
+      "building-glb-127": "11a6491ebac78d840868efdfcd5bbfec7520bce8b3ab5e5f66d3715993cce9cd",
+      "building-glb-128": "6ff2f055eb179ddc4c9b52955746da9438d8243f1ed72e921db1819839564b39",
+      "building-glb-129": "d510795c1fb159428735ba933bc93095dee72344d7fdeb08e4ecb000ee18f853",
+      "building-glb-130": "d4adb5ebccfb5e0d8f78022406cdc82c43a45f8e5c4be775d9ba7ca9436434aa",
+      "building-glb-131": "7ec3e46b76922a2ad804ca9e00ea24ea73755f2bcfa991e811a65e657ff1244c",
+      "building-glb-132": "be9a5c35e7c7134d24b916352924f13703369d5051042c6f120fc10d3309bc20",
+      "building-glb-133": "5654707d394e3db703712b4ffe21cc4752d28c478fe9e776d43936f6d3ffb5a1",
+      "building-glb-134": "1f30c83016ac9cc700b7e338a8fa7619d5ec38c31f95766ae27c77c09f56e739",
+      "building-glb-135": "e4f18e0d1bee53e8f6c02adaf88a9dbf6158ac7ae30ea3b8216ba4dd9c2dd482",
+      "building-glb-136": "396957923e83698db4f653d801daa915a48aa16e77bb160c08bf6f00185a844c",
+      "building-glb-137": "ea151809cc2640838f8d3b438e2e046da1b3170a92a55dbf1483b72bef329d4c",
+      "ground-manifest": "dacfd75e51da0c5ae674d1d373f3ede623fa5fadbcb8a9011b6f7f875076c4bc",
+      "ground-image": "6b332dec05d2e392f06c3759cef4e8207567afd96014d8f700e491feba7ccf48",
+      "terrain-mesh": "f005390d06f0c99506f200b295f1d3c83ea2bb3278c8f02c283d558f99c404de",
+      "context-manifest": "924aa9aa7a0c84cfa2487c9696aba8d44d31b8d6c91b74db21c67b94762c694c",
+      "context-asset-0": "0db4b227b7264d39a8410cde52cc53557c36ec793b8064796bd94e977a76fc59",
+      "context-asset-1": "03fde6407da7777351dd85823da43517897598e33b9d9c09d1ca86e61fceb016",
+      "context-asset-2": "a2f8a2d5342926d36cdd75331b1562f7afcadc8ac69f60f0f40a50ab76b0f517",
+      "context-asset-3": "3e525519f18351866827802b69b1d39c9b8e9f6d7da7f3c5793aa30ea54e8a2e",
+      "context-asset-4": "596232eafb53c1fc50a36a7d427d9757a7fb9e0f98375b02430df4089ba869a4",
+      "context-asset-5": "95db396e6bada3870f3ee8b8bc0bcab153c673f6b58ec8f2a5bf7bfaeb0bfab5",
+      "context-asset-6": "bb9d0669b5ec8489ab880f5035b363137e354393175cf8815941f91292fd4b24",
+      "context-asset-7": "9e451b2f9ddfe3f13b30f852b9b5a982f1c4aa5fa344aa9be918713cc9687bff",
+      "context-asset-8": "222f8f6fc3fe510784d18abb9da5bec40d80e0fa3ea25960d399672821d40bf1",
+      "context-asset-9": "11b5321f1b211766da4f1632e45cc669371751e46580db90fb62d70952c9a62a",
+      "context-asset-10": "0e9cd10782062a336b8886bdb8a160add337a2a5ce91b566094f718b6fef2b2b",
+      "context-asset-11": "65f2913f1e207f58ada08587b80a64a4cdf2c229682747b0e00921575b3f22bd",
+      "context-asset-12": "2f91ac6b78ba2d2a829053c8f4884f65cef9c1ea621933ab30efab673b7f935d",
+      "context-asset-13": "8f32da3ff2a9bef02926e782ee60912ac2b3a683e7e0b2c4ce57db487a17aa6e",
+      "context-asset-14": "510b296923fe60aebc28d84e5b1a929a95622cf94adbbfacfb2d15340e602984",
+      "context-asset-15": "799ab75671ff18bc226bda98c53e83bd0dca6f09e0ba0ac8d5e3cacc2b0a3a13",
+      "context-asset-16": "6738870f4faa47df957c63043e509b71b741519386cb5e0d607391163d22dae2",
+      "context-asset-17": "3b215185d43cbbda5eef79c32e2e98ed115d477db87dfb1279de17cbd78d48c4",
+      "context-asset-18": "b579df15db5757f9fad752770cb31af5e785b778bf18873e27be9c5b17143197",
+      "context-asset-19": "5355b5cdd14c9c3431407cbcc3fa5c89a8dc1e0c0e1de666bef032938d65ad26",
+      "context-asset-20": "3402f0822d904d5d3020f467754be9dafd5771592a085e2a7aa805b19ee273bb",
+      "context-asset-21": "3c71cab2f91c78a0bc1988b72e17e469d3bf43dc2723f45a70a2f73838aa2f49",
+      "context-asset-22": "ac92668f4c73f7ab93946366e322e2049b1dfc872d502ae361d72ad63f8ecb4e",
+      "context-asset-23": "937733e0f5e53573df06381ebd2726a06f5ae32f72c452660077de259a18d525",
+      "context-asset-24": "076c3dd94af6332518900a198f3ee8f59b00d10c09a6661ef9f4fd3674b99b82",
+      "context-asset-25": "6b3fdc75ca9fedb0cd49f4b705ee5f152eba3b04001d91d573dc43626de542c0",
+      "context-asset-26": "39d8f4e7e74c0bfdf51212a58b019cf6ed07aa928c135d8204d523eb659edbc6",
+      "context-asset-27": "117dcb4f6dd9bb466e16e44c499a2be745650e98a9891eb1edee33da9a48e686",
+      "context-asset-28": "e41a2b3806080d8b8685aeb3554779df270a5dc984ea68ca74abe6c0d4d50987",
+      "context-asset-29": "0640bce3e1afddaa77d9de343bb37197ee20292eae9b9feaf197650971e8c42b",
+      "context-asset-30": "875ef9b4c8927b3f0bff9e1c4073e6cea359f007892dcdf8060613912f1eb9ed",
+      "context-asset-31": "503abf93fe31cec5487261b7b42bbd80ed1adcb499339044d9e5575b4eafd430",
+      "context-asset-32": "45ba554d69274502f5037bfc32353dba5cd2368b7dca9f8fc116be8f1cc46028",
+      "context-asset-33": "82d059f1371657a86853718958736988433fddcecc6bc86deb02a7da87ac5d40",
+      "context-asset-34": "5741d9b4ad72866ebc4a06039e9ec56c5365c82e75d1cb54efeedf503a4cc0fa",
+      "context-asset-35": "8782bac79828b3d97af64b4e9fb56cdfcb0108329425b7f7f091c0fd4a647ee2",
+      "context-asset-36": "fe9806998273e7098e21baa0cefb1dd4664bdffa936f5c2ee397aab66fe53f59",
+      "context-asset-37": "c7c4fc707b6d93469f059bb57d3ef851ccab0da9e5e906436d31f5a918dde905",
+      "context-asset-38": "28974af0b346720be991badaf2a5c64953e382ebb58c1dc5d1a8482bdc2c1e53",
+      "context-asset-39": "dff11fc278cb23923ac19cf6734790caf4d473cdcb2b36891a2bcfc5d283d6ee",
+      "context-asset-40": "02a0b348f8af5a72470eceac7f1dcd1ddfb426f234de1d6187d6fe1d1cdd61ea",
+      "context-asset-41": "76c828f3f2572560ab566fc6da9d82d7eef3cf0d8896e2b54929d50ca7770325",
+      "context-asset-42": "d7e336dc27880ce6e8a333d2a53edd1daccc313a0a667029d5e2209625e17644",
+      "context-asset-43": "f4c9ff1830de9da34fb3c7390a42e586ff597eee8809c9f515e120dbc85da2ee",
+      "context-asset-44": "e3bf561d4c62be5d713afc7be11d507e7788eb05cfe824790f106fb46bbda4a5",
+      "context-asset-45": "df62172587e048116062ca05e98e6aaffb3f4e4a639ba6d55187cb48fb6e7408",
+      "context-asset-46": "975c1b7fb2fa9aae5c95362b28ac577e2320b70f366c9a7aa7570e9f71d2deb1",
+      "context-asset-47": "7f7083e33f8c01708d396143af4fba111085c96258b0a77a70dc081fd963ec5d",
+      "context-asset-48": "d68326c22f9f017d80b3fb12ef376889a7100e3fe439f05d9e8b077aa08c19c1",
+      "context-asset-49": "5bbf8086a6b6a1344ad8b4085a43a4ba3758e4b8b8a2ebad65d0d918f33f589e",
+      "context-asset-50": "5e174af59768977582113acdc3ec004ac239fa0fe119ae62b502d837ccd95878",
+      "context-asset-51": "b72a1000774e9b42bf1d8ac8f77b166605dcc1f453896870c501248a74dfd82f",
+      "context-asset-52": "397c7839c30851e9f17ccdc8fb266311b8a2d930dca4da0e4fb61c7432853832",
+      "context-asset-53": "c48b1f3ce9fca701020304c62409890ce981b987d6e072c30dfd6048a27ed5f0",
+      "context-asset-54": "7a314cd9680847d86f6a69d6fe79c04b5d1548ddac9155fed7de082d4f3fb82b",
+      "context-asset-55": "c1aa29ef7dda7c2d601ea2ac3ae44a52d5f13926602bfe4be00de3541a3964b4",
+      "context-asset-56": "ff99f26575c2c8b4e6d9bc3d1a2481ff12d05d5f1edfbcd458eb171193b4d734",
+      "context-asset-57": "8bc8d987a9536d4894044f9fd31ecf3bf292e67e6e5c5ca617fc706949e8dd54",
+      "context-asset-58": "d0ac5ffd18211f5d11ea692990dd38a1aceac7cb16d16788e8dbd91f3eedbaea",
+      "context-asset-59": "0fce857127a174b6bb6f05c9f760f113e287c824ed1a573eda843eaa341924a1",
+      "context-asset-60": "9dce32952dbfbf298a1dd2943d441a2fea9bbaa35e7c27f62a04a7ee6c4678bf",
+      "context-asset-61": "2df000b0ba628f33f20bce541a38e7032900e27a4bc48e14a61c67e41679812d",
+      "context-asset-62": "aeec56495c97066cd5534373a7037323853c6f90b440a13337596ce1dc2205f0",
+      "context-asset-63": "d1bd2349d0ef6568b96c4bb5467e0975f8106363c6a3773327f36f59169051f8",
+      "context-asset-64": "423d7698f44f52893024b3c7bd1e90dca86252a46dedde55352d2b2a6ec2e68b",
+      "context-asset-65": "4648d56438ff0bf44ab17734ae8e589e010f84469c0741daaba64e92ee81f123",
+      "context-asset-66": "c2da80a38a58ae79ecd82610f6c31da5d7758bac01a38ca8ecf768f7124514ce",
+      "context-asset-67": "4175c9a86287412ff3c0b7583f1f28eebfb0ba39b9c6c12bd8a75a40f789a549",
+      "context-asset-68": "9359789e1a41f068be95df34b89e531ad29281b88a66c58b3f3affda02c692c0",
+      "context-asset-69": "0b6dc9542b4c2dd55104dc1d9b321edcd1f6bc5de90e227d14eba2feefd686af",
+      "context-asset-70": "cb45a289b69f9b9ac19cb8b21f0133899d6ad17ec049aacc92acb268bc415534",
+      "context-asset-71": "54e45658b8af033b564a1998d790c9537627a6d796d807b9ad2dd0165a35e37a",
+      "context-asset-72": "6a6aa98e772bd684562f6d92695d667ca3138fc2fa2fd4f3bcd6500e37032c8e",
+      "context-asset-73": "e32727c72edbca650f48e7057967f1ab9ef9138b4a70421610b9d0353bf46506",
+      "context-asset-74": "0461cbd41dc1fa9fb3b565d10812c2ff4b73a29ce78aaa1ab58b2b62d0f11e67",
+      "context-asset-75": "2b9fb06455db3655553261f88ab306e220ef3df38ce9ee8c22f57316cf7ce0e1",
+      "context-asset-76": "72e68ca87b2f192da9ff8c230f663a6c29e7785787324421b4230406eee571d7",
+      "context-asset-77": "8a47923cd6cd5204c182472f9411bab0b1350c7c857a87113e54b97222c8af42",
+      "context-asset-78": "e9c56013b6221338ca5fb9514b9641261a53344565376c25b40495c573f5ffcb",
+      "context-asset-79": "8a151652e13794d8ac973fc9adcbc995394d5c0860f58e4aa0deaec2e1eb3148",
+      "context-asset-80": "756a97549f6ee013507d1e3ae7d94c1018ba797e536b6ffd95420b802a3fb287",
+      "context-asset-81": "6358609df2543a4b990cae0a1aa2509b1b1570c0867ed0aec67b2fb08bf2a47e",
+      "context-asset-82": "a4660edb0dc9f54246eea7bd673afeeade7459cecdd7a3de131e8edb85dbb8d9",
+      "context-asset-83": "244e77eeedb0ba38d84c0b18ff40055f932e8a9750cb91907c49ff1bb14eece8",
+      "context-asset-84": "cb5108671c2c0b507d24fe87d605685d8a72d660aa0f67e8d02aaba181087123",
+      "context-asset-85": "703f6bff63b9c437b599418769dad73025180c33ee69f88b0a4fc19e86954700",
+      "context-asset-86": "f1455a4113a389534557b414c497c95991fedb781434a83f7a7373201fbf3d7d",
+      "context-asset-87": "e4019834f7a0e4dd78c464ad9b543dbc144543ba530051dd6ee0a07b0f010a11",
+      "context-asset-88": "5c7034e17ec1c9b473fabf040fd2a5588eda10d61d4cc1b2bd263fb254f2fb60",
+      "context-asset-89": "ad81562489e0a4e6b14506d547035dc13ddddde842ab9deaf24b05904b43d8e7",
+      "context-asset-90": "94d1baf18fa2b191540297b9c3328dd93611b24082a5150212bc6022a1b371a6",
+      "context-asset-91": "fc59c7bcf82e071fee31e2cf0f3b0874520eb6bd1a14031e7f6a9ebae2764ef0",
+      "context-asset-92": "52f543fe5d0f502d3e5915461bf5e8a6ca62d304c17c025636fc885b8b5f1354",
+      "context-asset-93": "585eddf103a8a35c9b3e10e51c0f9666a8b9ba94dedf85335a8c1d5b02c816d6",
+      "context-asset-94": "a08d50697fb53f76cd6186ce7308182e6b7b30c9d415c1cd949235161c1880d6",
+      "context-asset-95": "b98d9204fc60a410f403c37a8992e189d712be5b4d322e462979956edfedb1e9",
+      "context-asset-96": "d300a91719efd83062f91180512ab4e24560df499c2d97182737503239c3ab44",
+      "context-asset-97": "3613ed27a8e65c39f7af503ef70124ca3a7f068c4888f81967d99ce7a136b993",
+      "context-asset-98": "239699e9d843628b39d8e840eaaae6ba159d5a6dc0c10a3824dcb24e71df2ddf",
+      "context-asset-99": "8d7a144277b8eea686689edff4f9a6f8da68fbe7b91513ce8e035aa6adaf75cc",
+      "context-asset-100": "f6ef8abeb24bf628afe5869561341299ac561e6ad40a5f5b19d2d9ae0b268521",
+      "context-asset-101": "4ec91de1b93fb3c4a5a03974dd0ac57c5bbffefa79cf787268b00c4d4af836b1",
+      "context-asset-102": "f2e2d28291f3a65a6cd7e9c00e39cd3c6b44baec4447ee4801d32318c7f48b1e",
+      "context-asset-103": "a02387f3ca7481acad5a1a19de8c9d9c846fb25ba9e1043642716d963a117588",
+      "context-asset-104": "636be48c139ddf60fa26fa8992eaf66fc8005b3a58c8804d982d6f4ffb02450d",
+      "context-asset-105": "61ab83aaee8ea488c339ff800d3679aae0cd82a13ef601159f06a907cf0cb304",
+      "context-asset-106": "91dd1bd80aeba1c6f9016277609432a8806afff1ca481c98f25840522dc09e2b",
+      "context-asset-107": "e0bee9380d5e49027655cd13032a71caea4b36d407ea3c7ee5f97c9c2e79ef77",
+      "context-asset-108": "53c1c3e1ad22ff3fc9c5840a5bf97566fcc1b4b83a77ade5466848573c62c84c",
+      "context-asset-109": "4c2396e1af0c9454b5aa0a3026f846952269e72a51804b532d749b9c2461ea51",
+      "context-asset-110": "49d02c36224df1cad80fed71bf7048cd1216b2ff2f058d39eb3fe0914dbeb4fd",
+      "context-asset-111": "a68bd8b9d269ab3661ffa36114e9dde43907250dbca270f266b7c95915e6913f",
+      "context-asset-112": "a41b0d45c156b4c148f2d41184d742a4f3b6a356b3354a425e46044de800ceb9",
+      "context-asset-113": "effac4b519fb9345fd16187b56979d09af4bf700d8f297c26a07c989c0dbfe15",
+      "context-asset-114": "c5f17b1291aeb443f472c634d0a32095098bc6cea3ebdab71febf4bbda658f6c",
+      "context-asset-115": "1434cd6d8dc64f29927617026f1bd1b7cc7166027be30b378931d53fd4445d79",
+      "context-asset-116": "8742b7db615f5c0682a547d35c3622602f97201e9442aaa0489a1d09d6d024d6",
+      "context-asset-117": "c590b9f6b733c593501e0f7cb48c6768267b9fad97adedad2a3b12214d5cf4da",
+      "context-asset-118": "1376b7145286ca8e404977a3ba08f71b5dc20551f6d06376a605330ba4edfb32",
+      "context-asset-119": "3f5081a1b7c8055ec5a47c322972ea9e035d59a80a06e456bfaa5a70d070a75c",
+      "context-asset-120": "a72ed2732b182a7e0bed18eccfbf9b906045307a62867886327f5a573a7ad381",
+      "context-asset-121": "5e1044acba31159d48a0714d8a9492fc62af912d4574dc95fcab41171f7d87db",
+      "context-asset-122": "29d0733577b6592deb273df73dc3f1fe22bec8bbd673353f66586bfc045ebe44",
+      "context-asset-123": "1642652d07102044ba59f726fda274f8bb3ea27b68f183581c0637f30000bb24",
+      "context-asset-124": "c01fcc80165a9f2efc21bf34bf7a94ae10e5b45373665a917047a8557ae01665",
+      "context-asset-125": "24021349584afe9986caff6cccea6f30a1c7ebd624e048b3a2308b8ce987c026",
+      "context-asset-126": "10e2723b53d7e4776eeab65c8a0805bf1a16cacdfcb70d2dc43275a3483339ba",
+      "context-asset-127": "ab79b78b3c13a01994b676c5a1de16bb3c9f3bde28930492ba8f407b1c6f6b0b",
+      "context-asset-128": "e09f1061be8888f59606886d6b63cf9984599799a6ee3f5a6ca42456ed62ab0c",
+      "context-asset-129": "ce74f4f46a602c17171b54a8b39ea2057ee9a51a2c18a6f2b110d098a0640e4a",
+      "context-asset-130": "684c9c9ba16f2d6e4e1634188de781620860fffe4d6b959f54bd8753cbb24fb0",
+      "context-asset-131": "12729711233b2882294782904b75609f29e0bb589d0752612d3ba5b3b602a741",
+      "context-asset-132": "dd898511dfe29aae56be4e95de64d3d6f4a91003b0f2b56530889b562b00b235",
+      "context-asset-133": "2e2c84e6b6b59d87b5296e703a733ee9c96b7f95dcbf3a2db54a91815bfc3dc6",
+      "context-asset-134": "5d900eadb1b85190676cd02f8ac6b8d6d1f41edb5c326842c2b505500f2ea05c",
+      "context-asset-135": "5669dceb3e36ff3a0658f1bd859d9f5401f1a13ce248dc82cc0a93d06856b3c1",
+      "context-asset-136": "e18eece9a4d73de231bfcbb9e88dfafbd20f58885791dfdf0b0fdd3e43fc521f",
+      "context-asset-137": "7d3bac6fe262ab69338baaa184ad765712b5432b0fb849e75b92246b102eca22",
+      "context-asset-138": "b882e902a3bec53f6a425d0623c468392e05c7be012e2dce64fa405c8397beea",
+      "context-asset-139": "122b5f04c2aac25fdfd43e81bd9b8848cc45c40e97b454df994467b489df66e9",
+      "context-asset-140": "e40198ddadc907404100e99d06846feaeb535cac83dc783a95eecbf917b2be5d",
+      "context-asset-141": "0b03be1b4de42c84bbf4deea99bab99bdebf7952a58060df1bca6f59bb34e54e",
+      "context-asset-142": "c250e4ce8fe4b5ab60205caf8477a6947ed2dbfd112de8acbc044e149f1df208",
+      "context-asset-143": "420289ae52eff0dc8ed54b7c38b4f14e6b8279c74de0b0a008a0d01110e8830f",
+      "context-asset-144": "abb8ce5869a815cd91e0a3355603f313d0568065d63bc281890352559cb5775a",
+      "context-asset-145": "4833ae7d8d252e17696c344eb126693ec5a6deb9a3fd0b9aaddceda7ef25b8e4",
+      "context-asset-146": "6907306df79394d659a8495bf40e19e5ae4554c56ea515d3bb70e2bbb7cd3ee1",
+      "context-asset-147": "04a60966c0aaf909a97ae938395a28c80c53c6c293b031bfe06d6e3eac73beba",
+      "context-asset-148": "ce8c75ea89a1a8968ecfbda7cfaebc2c91c4f162646fa33ad21f4b924da30758",
+      "context-asset-149": "d1bc901f5363598b9a67de4f4c24074fbefba0091590ab66bf52891dea6a7814",
+      "context-asset-150": "252f7ab5ec7ce5dbde09b815090da836bb1376ed55325cb82c1bda606409567a",
+      "context-asset-151": "45d89dec82afd6a5391935d885c68f886891391f931102a3c19ec8678b043afb",
+      "context-asset-152": "f758da3f12248a00afeb4dc42948de8f59f8e07a85102a3560eac9ca9a845e30",
+      "context-asset-153": "00a5bb3d021c730c01e314b2cceec56a49e7a931ffebd3259505ffb26d88d596",
+      "context-asset-154": "6140115fd8da3a9e64b1f768eb2c64ea7fabe78dadbc4c8235093d8fe8a88958",
+      "context-asset-155": "c2776908c58349b8d1ad2680e6ac8b69bbb84d077dfd3a19e36c62007fafc3ad",
+      "context-asset-156": "f0787a41122d6f07b5147b666e50d235a9187dc4b5a32f1c13a02045cc0249cb",
+      "context-asset-157": "d617f69485218fb9a2d2e526454a68c352a263197e65f47b517449d23d639965",
+      "context-asset-158": "49080d60617731ceaf30c5b4d3fa2fa1961dd341eafd98540756c36ae6cbd5ee",
+      "context-asset-159": "dc53a8ce0bfb83174d4f17f3a36eb7e23709a5a73b676f083acf511cb70843e6",
+      "context-asset-160": "c8d2daf13148a530a7f031da507b94fed8c1faa1a5cc17bdc3409e02cd21d803",
+      "context-asset-161": "4f651783dc8e9005fa1882f570ff20967a1ff542c03e90fb3c449dc4ba4b7a7d",
+      "context-asset-162": "3bb13f56e7c9491356dac4317c6beeba5cbe060b1d592f14395621b7496e05c0",
+      "context-asset-163": "282ac3dec35689dec044b6338af58e5e155465329c9b3d3bf47ba0caf21d2518",
+      "context-asset-164": "01f7f563dd8353c2a215aeee67987f5f43ed69ed8e0512e55e45335776074ef4",
+      "context-asset-165": "ee342300a812cac7bc38f5eac7e71497b35f7f800946ec897af4a07616b2c8e3",
+      "context-asset-166": "3466aa4aedc6cc724cda64e26fdbffbcab8201d3cbb7be4aa9528c964f46eaec",
+      "context-asset-167": "9f26763b3d33311f251ace2b38a1cd13e5fa5d928dfa68f50ed0491667fe078f",
+      "context-asset-168": "4b415ee3e37e87396830a200b41ea52270a3bb6ed15469fd459949b0c3a0c333",
+      "context-asset-169": "636a91bffe9ce3b50a4a429535472c38baa42de94ef1b47450ace5de2684a952",
+      "context-asset-170": "53dd13ba9dc3c05a1831cc841a53b805f0df544868cb42f3a77c70bafbc6486e",
+      "context-asset-171": "a1bb81e75a410936d45d29f136dc278bb32d01f85e65eedc46f1adcf64f39fdf",
+      "context-asset-172": "09c4acd55044a046dffd3f416f378ffa22c21eb9562622ec485992bfd737c13b",
+      "context-asset-173": "030cbfff69a48e5578b2670d0d6b6d1799277776b3d687d11bc7fb6ce4835504",
+      "context-asset-174": "bc3d3e8c36257c4f4006d70eae94febfd58ec931fc889956a4e73bca4bb2dd6f",
+      "context-asset-175": "1b4981100acaf71d70a4d8b4220306587391d0f058ea59d2b1096ec998d1c54c",
+      "context-asset-176": "e13520877e0e8a38ac3c464cdcac3d8ffec466fb63967e4fca8b9506c8eed94b",
+      "context-asset-177": "accf66a48eacb9cd586aebef3f3713bc2f48c59c5713eb798b2c030beef28517",
+      "context-asset-178": "49dcdcf04f3f9c09902685078fd48e42f64301487becae494ada535eba9f0f2f",
+      "context-asset-179": "df2c20935bd3d096f04b8267fffd3c235bb8f4b3cc9ca074b2570a876e5e77b5",
+      "context-asset-180": "06cbc6237350f18a7b27e0d287497f55d213caa94300ecc7152f55f7ffb24056",
+      "context-asset-181": "3a9c5a2369494362b3fce2eff9ac4cae305cee0bc5febeaad3b1cbd638019dee",
+      "context-asset-182": "4d1448b66b6089774519a42ec28b07a5bd6d2da8946a94eb5a3d4de35dc6b77c",
+      "context-asset-183": "d860c3ade952fd3861ef7abc59903d101bc9e4318ebea18efaad91a33ab040e7",
+      "context-asset-184": "7f9709c0c1d48dc1436a0e2ff181338275acbded8ce3711295dd60fdcdf47f3f",
+      "context-asset-185": "d8c91f4fd464f6a650df88931bd8f37318eaf6749ca5803294f5fa67282088b1",
+      "context-asset-186": "20b524fe9f2100b345e43d3447f6fa1fc4e3fc39796deb2ede83030c3a81c028",
+      "context-asset-187": "e89b4538656f4fdbc20f12a64df01222144edd9063bb8b2c38807402f1209cd2",
+      "context-asset-188": "56caebe99479fe87d094e0d96f085b4556c0d33341c543dcffb237d58bcd2669",
+      "context-asset-189": "12cc6cc8a049aab3f640f4f87afe23ff766a3bfcec5c6965eaf04555352e115a",
+      "context-asset-190": "a1e91e3751fa445d85b3d04d27fa0e88edc01057c75686f6490f5db66ac928d1",
+      "context-asset-191": "c4f624a670d2f434386eae2c774ca97d714c5e24837fbe07a3f921d26d72c80c",
+      "context-asset-192": "c1ee4a7e6e954fcc7441af28eafbd7144bc6ad6a43f44ea0276ba7e097efdc41",
+      "context-asset-193": "bbf673eb16fe11b5ebacf7828f45afae64a23b4dadba6447259cbbd90e767ce6",
+      "context-asset-194": "ffa440d984d39c6fa484896fcf6b876e66eb4e4ee95674309289c72772d20355",
+      "context-asset-195": "db9724df6084465f9d7fda7bf09dcb7171e134754693469f828aa4e1cc796fab",
+      "context-asset-196": "785bf54d85e1a23b6a1ba745cc48c64b4a975ebf4174088481b3fad9e460e139",
+      "context-asset-197": "e79a996ca9918ac26f64ddb18655511717c081a40fb83426ad917f7ac7c7cba6",
+      "context-asset-198": "708591936799f0b99921cb1444df1068dea4b3df42d27a8808367bf3ddd7d552",
+      "context-asset-199": "38692c0a34c483c9e3b6bae04507599cce7c9dfd90054cc815113edfd1f27eaa",
+      "context-asset-200": "2399548ea44b7820a8b2e7ecb82ec3e64a62bedc48e5f30e508061152d927558",
+      "context-asset-201": "d281d97519ceaa047dc59eb3475c3a163ad0c24f113428e50d4c8af43d8ba27d",
+      "context-asset-202": "f0db620b4b26af10ec4cff1d8c77632f15c51d10cd4d5be6b19a0f89ddf92f34",
+      "context-asset-203": "3dc5cbb03588e53bb09a79694fbc0888331ed833ebdfd4c2a77fa38320199c61",
+      "context-asset-204": "18290f69e8788e38e8d8bac440115bbcc2e214762bef396daf26c073c68c2eaf",
+      "context-asset-205": "84e11e67f9ada898086e182b0e2e8520321394f5972445079cf58829551e8ee3",
+      "context-asset-206": "e641efac34b19af5f1b93e532cb238525851782b5697c21a3256c5bd7f0c5745",
+      "context-asset-207": "e7637b9cb686a371208293a1764f914b6756ef5103d7b6de8b94b7c89ee110da",
+      "context-asset-208": "1062d84ba0697495f9d12786be3c6683278f2cfc5d50a5783419e8848bdd2743",
+      "context-asset-209": "64c169b97d3eea950c0f902021183f0ba8bff67a2547627e770fb94b5ca651a1",
+      "context-asset-210": "0698e60edcc078cbb71369572a6d7101bf7bcc6ad705f74f383b899d65dd3615",
+      "context-asset-211": "acf4b5936cf5c49dae29bfebcb68ad58747c53cd604e71f8c58c33b7fba51206",
+      "context-asset-212": "82953660770c675828e9ded278e1f6ffb0c528d80d107c80e23d2a3d581b1e31",
+      "context-asset-213": "a96d17faafd3bef2b074a8e643e910406a1f009f0556190ad3bff261cd3fa10f",
+      "context-asset-214": "903684ba60a450e7f3772b286c2a249ec9cd5ec7823c4aaa000fc019c3173ac5",
+      "context-asset-215": "22ce0c7416c216328bd641bfe0d43a66218cc4f45a516d388ff253c57d2e9676",
+      "context-asset-216": "d81adae249a17c4a82d5ccc6a94181e4ad5c36c1f78ea42d14bc84208ea52990",
+      "context-asset-217": "178fcf3e11e48037101869461877ed8475a66dee0192942f3c140d433ca30468",
+      "context-asset-218": "c3eb8d23a2d07eb3a01385a58b9397b2b8e1f6d2b55161990dfccd2f8d6ecab4",
+      "context-asset-219": "afd0f67e264943ffbf074c8f71c7447fe1f4dae57db601ac07a26aadd68b60e0",
+      "context-asset-220": "10b0ba31b43a7923d8bd5ec8e6f3e4f3d9c6c1865b742b2e21914f602dfbdc4b",
+      "context-asset-221": "b95f15b88d8e7101af6aaa7860998b4f52361c12b3147a43746fc5161ecc306f",
+      "context-asset-222": "429260effde96b4b18303a8d1cddc7fc705a512f809ccc13cb3290a1ad0e5c3d",
+      "context-asset-223": "8a16af3ee5d3d0fe12346a43b2e4c75202f7340863d94803346e37cf88229f5f",
+      "context-asset-224": "48a60239275a4ff612650242cf5074545fb27ed0e45523380a7edce897ea1a95",
+      "context-asset-225": "133acffee21a05dd1cfbeaf8162736eae3030a95705b1dfc2f1dd073ce15711b",
+      "context-asset-226": "fe291c290698cf70bc47938c7d739cba9b5ebe90380eff6a7aad7367bbb38795",
+      "context-asset-227": "032187f34daa7a73e2dfc00ed960262ed74c2c4c2920f8ea5eab93c44668b144",
+      "context-asset-228": "33bb3fc22eb8965bce379a3807638ded667b04350482ad6515d464368f11af90",
+      "context-asset-229": "11c13b3b05d0785da55abcd6cafae981279393045b40ba6f140976698d37568b",
+      "context-asset-230": "f7ac94821d205fd84609e06362187b1149748f8ae8f2d98443e67c88227048da",
+      "context-asset-231": "a4828d522f3924e83076285247ad35b68727f0ba7f43fd266258a7ac3249f228",
+      "context-asset-232": "93d3fad779ebc3833d17f9c836a1b54aeeb1b481359f10a196b33ea682f2d3a1",
+      "context-asset-233": "326f942a712d51118bedf10a31410cdf422c633535fc6dc95260ff6ade126efb",
+      "context-asset-234": "87918b55666551dc08bba023b3a9b9ee4b553c02695fea1d7b5f96068840ae63",
+      "context-asset-235": "0c23da7a15fba078da52a76d9652b1b6e61fc0353fa58f005715e4961f6d4e82",
+      "context-asset-236": "09a6ecdd226d3e0ed45b7708ba049876636857b44c9dbf0582edf51b2faf22cc",
+      "context-asset-237": "d981c6c6eb51c630d3fa35fd7787a4847ad0c10ace8d641b9078e44ce97a2c4a",
+      "context-asset-238": "6a43f734b84752b2a2d04317ced6cb2025993e3996492e29247e82094c9401dd",
+      "context-asset-239": "88d049610fd78b633a993b52a31dc4c1c78a5790b9eaea068c17d44e52a23895",
+      "context-asset-240": "e15dc780322a8f70accc44041f9086b47c121c06c8c2d4c45efa683e3185c4a2",
+      "context-asset-241": "d98ff9618beac0ab281c7b82ef0a148e0bddf72b53e2219c5348811816dc3e5c",
+      "context-asset-242": "bfa51ed194d995421382fd8ec226cf87c2b90c0ece3fe7265fa2e67d58c41518",
+      "context-asset-243": "e12d7221b6ff7c521fdbb1ad2778209c1a5e5848447da6dd31bf38d0bb2ef19f",
+      "context-asset-244": "2de1af593fff3df65448abbd1f318140dacc903474cb1c03eb89d99cc3d25e6a",
+      "context-asset-245": "61f43dbb3e4e4ac268fdbc82fdd96d4b28a39ec21a0a4ec6a5bc33c77bee981a",
+      "context-asset-246": "28eacb89b48db0c74c2407627a8cbc964032a29513def73c0a30748348886c66",
+      "context-asset-247": "82929cead3e813e8be2420b3607ed94bb38c1eedf3e636fdf72c2247ff718fcb",
+      "context-asset-248": "d3b984199eb9d1162b2dea6e0b5c0946533af9b80a435f157310f30401ee10bd",
+      "context-asset-249": "8e5f6b50d83582188a58cdb0795ceffcb03ca04ba8a7c2ef6414178e3368af92",
+      "context-asset-250": "ebe266b96e7a1c028772ee8eeea3533b47f6f7b7124ea0104ceeff80f5665e4e",
+      "context-asset-251": "8d97e849761bd73eddd8cb42ee546ec888ce4d7764df9ba7110d176af2cc4ed8",
+      "context-asset-252": "0eed363266690dba208075b171471445f4b8cf2316723894f74c4c0afc70b0fd",
+      "context-asset-253": "77f51730ca5f465b25283fc62160efba4fdcc08a0602d881c0c58a63262f9cee",
+      "context-asset-254": "39ce7b68beb870af21597cf8aab6e9c3334a1a7703475b43e07868dadf78def3",
+      "context-asset-255": "2486eaee2467ca4b58cd25df4f5050d9ecf0c82c7442e0b183bc2a23d320bf7d",
+      "context-asset-256": "2e985e92811966ffad449223143159a3038440384307fd5de5635e4bfc33f552",
+      "context-asset-257": "c2e267efb60d55eba5a68c41871c51754894207164816ea940506e6e25655d88",
+      "context-asset-258": "996feae8530b0659c536001fab2673f21e3dad711573209ff0830df53dd77eba",
+      "context-asset-259": "3a924993f120c1a2cbeeb755450775bc70747e2aca34fd8668a3407fd5d9ea2b",
+      "context-asset-260": "0b9942d82b6ad3768b2701b46b88c8954fd25d49f64577bbdc0bfe96eba38a91",
+      "context-asset-261": "63e7486f96d5c8a8a92c67db3ec57475b6d721484b899cdb6ad894ab429902f7",
+      "context-asset-262": "646c7bd761b7c9a14e3e2ad120016a78382ede437ef025331ca992b5d4357f8a",
+      "context-asset-263": "5106a8a163517f723c6c69e0ec6fe33e04fb09652f2e9cfcfc39e9c6f4e7ef4a",
+      "context-asset-264": "5695c1c601c39bf6ca8e3bb9966a3e6d060cca222e982767d7ef0720a8f16adf",
+      "context-asset-265": "d519d3a4f1dc97df2574f2c8ece4a26d7b626d0352cda82e3e8912da8528326b",
+      "context-asset-266": "e43def83c367f84ab5f98959ecd7a075dfad3f1c847939beb498f2983aae6053",
+      "context-asset-267": "691006f3cda9f02c12685dd0123c42d7b03590658d0e3cf88200a04f3fe5510a",
+      "context-asset-268": "e863ac71ff457a42aca051fc2e1b58e3aa3a17aa111dff3f4b4236528fe1ce26",
+      "context-asset-269": "ef5fc15721330f1a335557187b91088c74f7caf43ae997629c8c492e00d78f28",
+      "context-asset-270": "8cd46db5018e279b08d443c5111449888f5b990a73ba3068c3016832706599eb",
+      "context-asset-271": "ea969624b98558b5e8a73dfc966eefb0d30b1c56dca5ae4d0f8d6fbc61e5d89e",
+      "context-asset-272": "d63bea3750a97ca95224554272ec87c9fe012e4ee73de6754446da9bc769d692",
+      "context-asset-273": "3efaca614e318d525fed7f93ecfda2c8fa3a211d3839f80cd7c7b12138ebc619",
+      "context-asset-274": "5525a99edc033e98efed07546c3e8190c189aecffc23e4038c5e1249eff1e6e6",
+      "context-asset-275": "178f78b8723226573215c433a235dd847f9474e2ae69be3a95f862d38d22eefd",
+      "context-asset-276": "c9c67281d48935d8c9e388012172eac7345d329ea5a8d8b28eba7a8334592c80",
+      "context-asset-277": "b3eae74389fd225fc0660877fc75e78d41d5e53ac4f2a36a926133f86c104587",
+      "context-asset-278": "60d16b00e1ab72f4c23c499bb3db07737be5e268fba9894d67b202b638e751cb",
+      "context-asset-279": "94b1598cb6a68e30bda03d4939355d319dd0e14b55cd2c235a4dcd204814d664",
+      "context-asset-280": "94c28ac56f6a1979bee408535868ba408d6334209740515add61b0d0a8bf6d9c",
+      "context-asset-281": "2e36bc191a1dd02dfa3c9e02a661cfe12272f960cbcb6e3db6a3bc0308e6e313",
+      "context-asset-282": "eb6b9248cc8192eb9ed76750376753bfa8bd6d53d5f6c617c6932f63a088e31f",
+      "context-asset-283": "2bfa29ec72a561e5dbcb13d0cfb515ca215f73f046a8da77d7dae6a40ad18a98",
+      "context-asset-284": "d75d30bf6a7196fbe9171c7aff1d58533b41554532b2754cad0550556c55f16a",
+      "context-asset-285": "67721ee5628d713ba3f7364f0bc1937da8f9eddcfb787bf64f31b3a74ecbd0e9",
+      "context-asset-286": "ee805aa150cbfdf819ea1b667ebeb6a4d81764756d34d4bce1a0face00d66e39",
+      "context-asset-287": "be1d9247f938f247fc0ae62eede8b02c2c3b91eac4e58a47cc9a70b6b204fa18",
+      "context-asset-288": "1e3eceefb393f37d5441f98b498651c10542551af60c899a097c4db26ce3f178",
+      "context-asset-289": "1379154452ad945baa5a80c5d9b5d3bb5a77b762bde27ee1b364af7dfc4eb94b",
+      "context-asset-290": "b0f7d5d8c7cbe4a919b1bf8f1875983a16874b3c0ce1b1f9c1dca4b068776e1c",
+      "context-asset-291": "79d80a607ad12bf6c6db30be712a7e80a2d90d729f5dce5ce5c6120c51408f61",
+      "context-asset-292": "41a674586d5d8962f197adebf5da67e4b0c79b62e545079e5b273e83e7eb9ea1",
+      "context-asset-293": "efc72dcfd5b3dac15882763e2e4921b33856153830d32c8b5a8220529847e4c6",
+      "context-asset-294": "f0836750311a0b7c325772c95a5268792bd6c9cad5d62d593c2d3afa5e49726f",
+      "context-asset-295": "9fa861297c858595998dfea5eaccfa3dc79bf547686f88951800499ce7248f83",
+      "context-asset-296": "2b4bb70529f7467547d55c4f93360c4a25f5e24f38d8fea7d910f7438e03fc74",
+      "context-asset-297": "cde3dedc915575c64a36d4cb3a8b07fe87fa0692ed3ef337006d77adceae3a99",
+      "context-asset-298": "e2ab52560625da638b506f0beac6912389ee3f8da68f0f5036ecbccdea86ad0c",
+      "context-asset-299": "e3c5abe40ffab9d0a408c1dff9cc8ca678819b0101af30c8d66d71c0ad448b7a",
+      "context-asset-300": "ed47cf55c76b08fa63a5ed39ec51d47b6bd4776d0a9d9cdb8616dd325f0d5ef7",
+      "context-asset-301": "c11fbe69488c5d78e1226f7081ae56256a2d87d337b77d3103d0612d4f2a02b4",
+      "context-asset-302": "b0b5028538e555b54a9ff0e84992bece9975e8b678e373136bdc8c79a449db6e",
+      "context-asset-303": "a894709a4e320bf801816fb701010448ddda0556afae6c5e3fc562085392ebf6",
+      "context-asset-304": "b2f2aeaf06a3a7053575748242022366e6bedde3251b6826a0c5d4b73dc9af9a",
+      "context-asset-305": "31e096a65de98234f41683c9d932c05f0b229c2f4b9072233c33d4ddce675e6c",
+      "context-asset-306": "2dbcee3f9b936913ec6c69c2e8f622fd033c301612944764c5814530e4a005e6",
+      "vegetation-manifest": "ae7db25ee1eff46e821662f63f57817cf4afe326d0462a0f4491fbf41d3ec3ee",
+      "vegetation-source-asset-0": "4c2785c796b4bd1c5cd48744a2784538301862fdb490640004ac9f6891ad08ea",
+      "vegetation-source-asset-1": "3a33672c8e9558699ca3d6308dee623db75c91df4911f4d9a52303e421716dec",
+      "vegetation-source-asset-2": "22c2921f0dddfc914121ddf454d0a3ac5f2bff60b9423d18fbbbef95fbad44a9"
+    },
+    "input_file_bytes": 294790782,
+    "selection_bbox_wsen": [
+      139.66880748562312,
+      35.66813320361291,
+      139.7180162457002,
+      35.70827142274647
+    ],
+    "source_attribution": "Tokyo Metropolitan Government / Project PLATEAU. Shinjuku 2025 catalog edition, Shibuya 2025 catalog edition, Nakano 2025 catalog edition. Original building tiles retained; no geometry changes.",
+    "source_license": {
+      "url": "https://www.mlit.go.jp/plateau/site-policy/",
+      "note": "Per-ward source package terms are retained in sources. Geographic data is not relicensed under the code licence."
+    },
+    "source_date": "Catalog editions 2025; acquisition dates are not assumed equal",
+    "building_count_in_selected_tiles": 16859,
+    "lod_counts_in_selected_tiles": {},
+    "ground_attribution": "Source: Project PLATEAU, Ministry of Land, Infrastructure, Transport and Tourism (MLIT), Japan. Processed into a local mosaic.",
+    "ground_bounds_wsen": [
+      139.6746826171875,
+      35.67737855391474,
+      139.7076416015625,
+      35.70191673285339
+    ],
+    "terrain_attribution": "PLATEAU | Mapterhorn | \u56fd\u571f\u5730\u7406\u9662",
+    "building_feature_ids_preserved": false,
+    "terrain_edge_reconciliation_performed": true,
+    "terrain_processing": {
+      "processing": "Native source TIN, welded matching tile edges, clipped only at bounded support perimeter",
+      "schema_version": 2,
+      "reconciliation": {
+        "method": "Native source TIN, welded matching tile edges, clipped only at bounded support perimeter",
+        "bounds_wsen": [
+          139.676875,
+          35.678333333333335,
+          139.70555555555555,
+          35.70173611111111
+        ],
+        "grid_origin_lonlat": [
+          0,
+          0
+        ],
+        "support_grid_step_degrees": 6.944444444444444e-05,
+        "edge_coordinate_quantization_degrees": 1e-12,
+        "native_interior_vertices_preserved": true,
+        "regular_height_grid_resampling_applied": false,
+        "geometry_height_smoothing_applied": false,
+        "global_height_adjustment_m": 0,
+        "maximum_measured_join_correction_m": 0.0006185211406091184,
+        "maximum_allowed_join_correction_m": 0.02,
+        "matching_source_edge_pairs": 49,
+        "open_interior_edges": 0,
+        "source_tiles": [
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541243e-05,
+            "maximum_original_edge_rise_run": 1.2050622342592294
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541338e-05,
+            "maximum_original_edge_rise_run": 0.8126428145251648
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541165e-05,
+            "maximum_original_edge_rise_run": 1.7867002870993085
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541358e-05,
+            "maximum_original_edge_rise_run": 1.0018043625631083
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754129e-05,
+            "maximum_original_edge_rise_run": 1.047778190838679
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.01748514175413e-05,
+            "maximum_original_edge_rise_run": 1.1634100695921636
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754126e-05,
+            "maximum_original_edge_rise_run": 1.6992715558355735
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541148e-05,
+            "maximum_original_edge_rise_run": 2.77688402221645
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754123e-05,
+            "maximum_original_edge_rise_run": 1.3496720718045438
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754095e-05,
+            "maximum_original_edge_rise_run": 1.0279265395873873
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754084e-05,
+            "maximum_original_edge_rise_run": 1.54579170114909
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541063e-05,
+            "maximum_original_edge_rise_run": 1.3405865587139671
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541114e-05,
+            "maximum_original_edge_rise_run": 1.351042424712924
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541236e-05,
+            "maximum_original_edge_rise_run": 1.401603142112393
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541006e-05,
+            "maximum_original_edge_rise_run": 1.7035816310131724
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417540925e-05,
+            "maximum_original_edge_rise_run": 1.5438657821211283
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541185e-05,
+            "maximum_original_edge_rise_run": 1.4203597326974031
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541155e-05,
+            "maximum_original_edge_rise_run": 2.12530024780872
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754112e-05,
+            "maximum_original_edge_rise_run": 1.0545354658622177
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541094e-05,
+            "maximum_original_edge_rise_run": 1.7214289778104306
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417540996e-05,
+            "maximum_original_edge_rise_run": 1.8613820899694147
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754126e-05,
+            "maximum_original_edge_rise_run": 1.5574037255220516
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754132e-05,
+            "maximum_original_edge_rise_run": 1.558078530177918
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541345e-05,
+            "maximum_original_edge_rise_run": 1.4775981823568798
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541236e-05,
+            "maximum_original_edge_rise_run": 1.1973321314378778
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417540996e-05,
+            "maximum_original_edge_rise_run": 1.3634156752461597
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541226e-05,
+            "maximum_original_edge_rise_run": 1.1877166748148902
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541433e-05,
+            "maximum_original_edge_rise_run": 1.2332291821573182
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.0174851417541453e-05,
+            "maximum_original_edge_rise_run": 0.7550545177562116
+          },
+          {
+            "reversed_triangles": 0,
+            "degenerate_triangles": 0,
+            "nonmanifold_edges": 0,
+            "projected_area_degrees_squared": 3.017485141754132e-05,
+            "maximum_original_edge_rise_run": 1.1195510911224038
+          }
+        ],
+        "coverage_verified": false,
+        "original_boundary_diagnostics": {
+          "adjacent_pairs": [
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.6781005859375,
+                139.68017578125,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.6781005859375,
+                139.6856689453125,
+                35.68359375
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00025281474559335493
+            },
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.6781005859375,
+                139.68017578125,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.6746826171875,
+                35.68359375,
+                139.68017578125,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0002911872691697681
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.6781005859375,
+                139.6856689453125,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.6781005859375,
+                139.691162109375,
+                35.68359375
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003420210230160592
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.6781005859375,
+                139.6856689453125,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.68359375,
+                139.6856689453125,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00036607586689285654
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.6781005859375,
+                139.691162109375,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.6781005859375,
+                139.6966552734375,
+                35.68359375
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00041953428645058466
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.6781005859375,
+                139.691162109375,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.68359375,
+                139.691162109375,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00045515026883435894
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.6781005859375,
+                139.6966552734375,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.6781005859375,
+                139.7021484375,
+                35.68359375
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003683324930818799
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.6781005859375,
+                139.6966552734375,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.68359375,
+                139.6966552734375,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00033878827294131497
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.6781005859375,
+                139.7021484375,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.6781005859375,
+                139.7076416015625,
+                35.68359375
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00035549807266477274
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.6781005859375,
+                139.7021484375,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.68359375,
+                139.7021484375,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00032569424240591616
+            },
+            {
+              "bounds_a": [
+                139.7021484375,
+                35.6781005859375,
+                139.7076416015625,
+                35.68359375
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.68359375,
+                139.7076416015625,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0002866463203190506
+            },
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.68359375,
+                139.68017578125,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.68359375,
+                139.6856689453125,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003610999918350899
+            },
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.68359375,
+                139.68017578125,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.6746826171875,
+                35.6890869140625,
+                139.68017578125,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003550906506006868
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.68359375,
+                139.6856689453125,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.68359375,
+                139.691162109375,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0004002009413994756
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.68359375,
+                139.6856689453125,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.6890869140625,
+                139.6856689453125,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003927581663276669
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.68359375,
+                139.691162109375,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.68359375,
+                139.6966552734375,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00036486816219394314
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.68359375,
+                139.691162109375,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.6890869140625,
+                139.691162109375,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0004485731352872335
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.68359375,
+                139.6966552734375,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.68359375,
+                139.7021484375,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00036961595674256387
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.68359375,
+                139.6966552734375,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.6890869140625,
+                139.6966552734375,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00024088117450560276
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.68359375,
+                139.7021484375,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.68359375,
+                139.7076416015625,
+                35.6890869140625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0004163263138110551
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.68359375,
+                139.7021484375,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.6890869140625,
+                139.7021484375,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00028802755663548396
+            },
+            {
+              "bounds_a": [
+                139.7021484375,
+                35.68359375,
+                139.7076416015625,
+                35.6890869140625
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.6890869140625,
+                139.7076416015625,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00027917828234080844
+            },
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.6890869140625,
+                139.68017578125,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.6890869140625,
+                139.6856689453125,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00034074375305692683
+            },
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.6890869140625,
+                139.68017578125,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.6746826171875,
+                35.694580078125,
+                139.68017578125,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003632486096876164
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.6890869140625,
+                139.6856689453125,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.6890869140625,
+                139.691162109375,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0004180981314121368
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.6890869140625,
+                139.6856689453125,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.694580078125,
+                139.6856689453125,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003960207949660344
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.6890869140625,
+                139.691162109375,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.6890869140625,
+                139.6966552734375,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00044440421413582953
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.6890869140625,
+                139.691162109375,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.694580078125,
+                139.691162109375,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0005687616334171253
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.6890869140625,
+                139.6966552734375,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.6890869140625,
+                139.7021484375,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0002945690904141429
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.6890869140625,
+                139.6966552734375,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.694580078125,
+                139.6966552734375,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.000337929974563167
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.6890869140625,
+                139.7021484375,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.6890869140625,
+                139.7076416015625,
+                35.694580078125
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00020877921350859197
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.6890869140625,
+                139.7021484375,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.694580078125,
+                139.7021484375,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0002395111524862159
+            },
+            {
+              "bounds_a": [
+                139.7021484375,
+                35.6890869140625,
+                139.7076416015625,
+                35.694580078125
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.694580078125,
+                139.7076416015625,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0006325090266869893
+            },
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.694580078125,
+                139.68017578125,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.694580078125,
+                139.6856689453125,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00023897576870979265
+            },
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.694580078125,
+                139.68017578125,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.6746826171875,
+                35.7000732421875,
+                139.68017578125,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00026066011406555845
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.694580078125,
+                139.6856689453125,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.694580078125,
+                139.691162109375,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00041949548835162886
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.694580078125,
+                139.6856689453125,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.7000732421875,
+                139.6856689453125,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003904870669231286
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.694580078125,
+                139.691162109375,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.694580078125,
+                139.6966552734375,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00043444788175861504
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.694580078125,
+                139.691162109375,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.7000732421875,
+                139.691162109375,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0004942772877143398
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.694580078125,
+                139.6966552734375,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.694580078125,
+                139.7021484375,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00036898381368644095
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.694580078125,
+                139.6966552734375,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.7000732421875,
+                139.6966552734375,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00044207569169429917
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.694580078125,
+                139.7021484375,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.694580078125,
+                139.7076416015625,
+                35.7000732421875
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00029037431335154906
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.694580078125,
+                139.7021484375,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.7000732421875,
+                139.7021484375,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0002921810692555482
+            },
+            {
+              "bounds_a": [
+                139.7021484375,
+                35.694580078125,
+                139.7076416015625,
+                35.7000732421875
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.7000732421875,
+                139.7076416015625,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00021972353461308103
+            },
+            {
+              "bounds_a": [
+                139.6746826171875,
+                35.7000732421875,
+                139.68017578125,
+                35.70556640625
+              ],
+              "bounds_b": [
+                139.68017578125,
+                35.7000732421875,
+                139.6856689453125,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0003446543681491221
+            },
+            {
+              "bounds_a": [
+                139.68017578125,
+                35.7000732421875,
+                139.6856689453125,
+                35.70556640625
+              ],
+              "bounds_b": [
+                139.6856689453125,
+                35.7000732421875,
+                139.691162109375,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00047813336594515476
+            },
+            {
+              "bounds_a": [
+                139.6856689453125,
+                35.7000732421875,
+                139.691162109375,
+                35.70556640625
+              ],
+              "bounds_b": [
+                139.691162109375,
+                35.7000732421875,
+                139.6966552734375,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0004481753755385398
+            },
+            {
+              "bounds_a": [
+                139.691162109375,
+                35.7000732421875,
+                139.6966552734375,
+                35.70556640625
+              ],
+              "bounds_b": [
+                139.6966552734375,
+                35.7000732421875,
+                139.7021484375,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.0004016061845817376
+            },
+            {
+              "bounds_a": [
+                139.6966552734375,
+                35.7000732421875,
+                139.7021484375,
+                35.70556640625
+              ],
+              "bounds_b": [
+                139.7021484375,
+                35.7000732421875,
+                139.7076416015625,
+                35.70556640625
+              ],
+              "samples": 33,
+              "max_height_disagreement_m": 0.00016900707160516504
+            }
+          ],
+          "maximum_height_disagreement_m": 0.0006325090266869893
+        }
+      },
+      "source_bytes": 697132,
+      "source_original_vertex_count": 63211,
+      "source_original_triangle_count": 122867,
+      "layer_metadata_sha256": "06c87b519cf3b4050eaf7d0fd23c637cb34f4ee96ffe137a6e1e9bcfb68c5398",
+      "additional_geoid_correction_m": 0,
+      "smooth_shading": true,
+      "height_reference": "WGS84 ellipsoidal height in metres, geoid correction already applied by source"
+    },
+    "ground_uv_mapping": "Geodetic inverse at mesh vertices followed by Web Mercator UV; interpolation inside triangles",
+    "limitations": [
+      "All loaded meshes are retained, but unselected source tiles may contain missing occluders or shadow casters.",
+      "Input selection bounds are not a certificate of visible coverage or source completeness.",
+      "Building feature IDs and depth, normal, silhouette and semantic guides are not exported yet.",
+      "Photographic shadows, mixed LOD and terrain alignment require source review.",
+      "Context meshes retain original elevations. Road/terrain overlap, water visibility and source edition alignment require review; no corrective height shift was invented.",
+      "Vegetation crowns are artistic representations of mapped points or woodland fill, not surveyed tree geometry or measured heights."
+    ],
+    "context": {
+      "source_counts": {
+        "tran": 92,
+        "veg": 7,
+        "wtr": 2
+      },
+      "source_feature_count": 2554,
+      "attribution": "Project PLATEAU, Shinjuku 2025 catalog sources. Selected context tiles, original geometry retained.",
+      "license": {
+        "id": "plateau",
+        "title": "PLATEAU Site Policy \u300c\uff13\uff0e\u8457\u4f5c\u6a29\u306b\u3064\u3044\u3066\u300d\u306b\u62e0\u308b",
+        "url": "https://www.mlit.go.jp/plateau/site-policy/"
+      },
+      "edition": 2025,
+      "sources": [
+        {
+          "id": "di_13104_tran_lod3",
+          "dataset_id": "d_13104_tran",
+          "type": "tran",
+          "name": "LOD3",
+          "lod": 3,
+          "url": "https://assets.cms.plateau.reearth.io/assets/5d/8e46a6-98de-4829-8e4f-656c7cc89348/13104_shinjuku-ku_pref_2025_citygml_1_op_tran_3dtiles_lod3/tileset.json",
+          "intersecting_tile_count": 92
+        },
+        {
+          "id": "di_13104_veg_PlantCover_lod3",
+          "dataset_id": "d_13104_veg_PlantCover",
+          "type": "veg",
+          "name": "\u690d\u88ab LOD3",
+          "lod": 3,
+          "url": "https://assets.cms.plateau.reearth.io/assets/fb/650c98-a675-4675-97fa-eb67bee76717/13104_shinjuku-ku_pref_2025_citygml_1_op_veg_PlantCover_3dtiles_lod3/tileset.json",
+          "intersecting_tile_count": 3
+        },
+        {
+          "id": "di_13104_veg_SolitaryVegetationObject_lod3",
+          "dataset_id": "d_13104_veg_SolitaryVegetationObject",
+          "type": "veg",
+          "name": "\u5358\u72ec\u6728 LOD3",
+          "lod": 3,
+          "url": "https://assets.cms.plateau.reearth.io/assets/14/eaba66-7161-4b43-96b5-7a140bce6cbf/13104_shinjuku-ku_pref_2025_citygml_1_op_veg_SolitaryVegetationObject_3dtiles_lod3/tileset.json",
+          "intersecting_tile_count": 4
+        },
+        {
+          "id": "di_13104_wtr_lod1",
+          "dataset_id": "d_13104_wtr",
+          "type": "wtr",
+          "name": "LOD1",
+          "lod": 1,
+          "url": "https://assets.cms.plateau.reearth.io/assets/07/a49930-e18e-40d0-bb01-b19f019e8984/13104_shinjuku-ku_pref_2025_citygml_1_op_wtr_3dtiles_lod1/tileset.json",
+          "intersecting_tile_count": 2
+        }
+      ],
+      "original_bounds_enu_m": [
+        -6060.454036794546,
+        -2548.70257691519,
+        30.663200102568226,
+        8749.590217075089,
+        2870.921514075635,
+        103.5215780847036
+      ],
+      "vertical_alignment_diagnostics": {
+        "definition": "Source vertex ENU-up minus vertical terrain intersection ENU-up, in metres",
+        "interpretation": "Descriptive separation only; bridges, water surfaces and source dates require review",
+        "height_adjustment_m": 0,
+        "reviewed": false,
+        "terrain_height_range_enu_m": [
+          53.33414840698242,
+          82.59772491455078
+        ],
+        "sample_cap_per_semantic": 2048,
+        "semantics": {
+          "transportation": {
+            "source_vertex_count": 452253,
+            "tested_vertex_count": 2048,
+            "terrain_intersection_count": 1971,
+            "outside_terrain_count": 77,
+            "source_minus_terrain_m": {
+              "minimum_m": -7.4248046875,
+              "p10_m": -0.2326812744140625,
+              "median_m": 0.00850677490234375,
+              "p90_m": 0.34051513671875,
+              "maximum_m": 25.871192932128906
+            }
+          },
+          "vegetation": {
+            "source_vertex_count": 46926,
+            "tested_vertex_count": 2048,
+            "terrain_intersection_count": 2048,
+            "outside_terrain_count": 0,
+            "source_minus_terrain_m": {
+              "minimum_m": -2.533660888671875,
+              "p10_m": 1.7155914306640625,
+              "median_m": 6.9000701904296875,
+              "p90_m": 10.507431030273438,
+              "maximum_m": 15.465576171875
+            }
+          },
+          "water": {
+            "source_vertex_count": 27639,
+            "tested_vertex_count": 2048,
+            "terrain_intersection_count": 148,
+            "outside_terrain_count": 1900,
+            "source_minus_terrain_m": {
+              "minimum_m": -30.062835693359375,
+              "p10_m": -28.658721923828125,
+              "median_m": -6.589141845703125,
+              "p90_m": -0.0761566162109375,
+              "maximum_m": 2.7211151123046875
+            }
+          }
+        }
+      },
+      "height_adjustment_m": 0,
+      "vertical_alignment_reviewed": false
+    },
+    "vegetation": {
+      "manifest_sha256": "ae7db25ee1eff46e821662f63f57817cf4afe326d0462a0f4491fbf41d3ec3ee",
+      "source_kind": "Open mapped features, not a tree survey",
+      "source_attribution": "\u00a9 OpenStreetMap contributors",
+      "source_license": {
+        "id": "ODbL-1.0",
+        "url": "https://opendatacommons.org/licenses/odbl/1-0/"
+      },
+      "source": {
+        "endpoint": "https://overpass-api.de/api/interpreter",
+        "query_sha256": "3a33672c8e9558699ca3d6308dee623db75c91df4911f4d9a52303e421716dec",
+        "sha256": "4c2785c796b4bd1c5cd48744a2784538301862fdb490640004ac9f6891ad08ea",
+        "bytes": 22570051,
+        "fetched_at": "2026-10-21T04:11:37+00:00",
+        "source_url": "https://www.openstreetmap.org/",
+        "attribution": "\u00a9 OpenStreetMap contributors",
+        "license": {
+          "id": "ODbL-1.0",
+          "url": "https://opendatacommons.org/licenses/odbl/1-0/"
+        },
+        "timestamp_osm_base": "2026-10-21T04:10:31Z",
+        "raw_path": "source-response.json",
+        "query_path": "query.overpassql"
+      },
+      "sources": [],
+      "public_data_reference": "datasets/shinjuku-vegetation/",
+      "representation_counts": {
+        "mapped_tree": 182,
+        "artistic_woodland_fill": 901,
+        "outside_terrain": 0
+      },
+      "dimensions_measured": false,
+      "canopy_shape_measured": false,
+      "terrain_draping": "Original shared terrain surface, no change to terrain elevations",
+      "source_coverage_verified": false
+    }
+  },
+  "outputs": [
+    {
+      "id": "source-reference",
+      "title": "Source and mapped context",
+      "path": "source-reference.png",
+      "sha256": "f6c0fa3818872683b3a3ecf8361617b005c68ff20e84fd8ced86b3b24c32c793",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "atlas-ink",
+      "title": "A. Atlas ink",
+      "path": "atlas-ink.png",
+      "sha256": "b09543c6883712e703ee5ec513ed41594cbc6971aa6eb862424d6e9c18aa8320",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "garden-city",
+      "title": "B. Garden city",
+      "path": "garden-city.png",
+      "sha256": "49cf44f0af65588e9d448b2209863d93e4fa0335d5aa25e5cd3597926c355d5b",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "terracotta",
+      "title": "C. Terracotta blocks",
+      "path": "terracotta.png",
+      "sha256": "c9805eda5d444ac23012849764e0dcad9c6a97152acbeb788f9d61ca4eac6a62",
+      "width": 1024,
+      "height": 1024
+    }
+  ],
+  "limitations": [
+    "Unapproved structural art-direction studies, not finished illustrations.",
+    "All candidates use exactly the same loaded source meshes and camera as the new unstyled reference.",
+    "Ground photography is replaced with a palette. Context appears only where supplied; transportation is not subdivided into unverified rail/road types.",
+    "Roof/facade classification is a deterministic shader rule on shading-normal Z, not source semantic roof labels.",
+    "Procedural window marks and palette choices are artistic treatments, not measured facade details.",
+    "Mapped vegetation may use interpreted canopy shapes; source attribution and representation limits are retained separately.",
+    "No final art direction, terrain alignment or real-world completeness is approved by this pilot."
+  ],
+  "comparison": {
+    "path": "style-comparison.png",
+    "sha256": "b4e31f76de10d2b33bee8d225ac2ab8ddf8064c5b7ecf08653993fe6f3d770bd",
+    "width": 2108,
+    "height": 2412
+  },
+  "display_attribution": [
+    "City model: Tokyo Metropolitan Government / Project PLATEAU. Shinjuku 2025 catalog edition, Shibuya 2025 catalog edition, Nakano 2025 catalog edition. Original building tiles retained; no geometry changes.",
+    "Imagery: Source: Project PLATEAU, Ministry of Land, Infrastructure, Transport and Tourism (MLIT), Japan. Processed into a local mosaic.",
+    "Terrain: PLATEAU | Mapterhorn | \u56fd\u571f\u5730\u7406\u9662",
+    "Context: Project PLATEAU, Shinjuku 2025 catalog sources. Selected context tiles, original geometry retained.",
+    "Vegetation: \u00a9 OpenStreetMap contributors",
+    "Modified independent study. No endorsement. Artistic details are not measured source facts."
+  ]
+}

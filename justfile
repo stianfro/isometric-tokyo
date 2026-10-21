@@ -179,3 +179,43 @@ viewer-build-chunks index metadata="configs/shinjuku-viewer.json":
 
 repair-release *args:
     {{python}} scripts/apply_repairs.py {{args}}
+
+art-pilot config manifest ground terrain context vegetation destination="renders/shinjuku-art":
+    blender --background --factory-startup --python-exit-code 1 --python scripts/render_style_pilot.py -- render --config "{{config}}" --manifest "{{manifest}}" --ground "{{ground}}" --terrain "{{terrain}}" --context "{{context}}" --vegetation "{{vegetation}}" --presets configs/shinjuku-art-presets.json --samples 128 --resolution 1024 --max-source-tiles 512 --output "{{destination}}"
+    {{python}} scripts/render_style_pilot.py finalize --output "{{destination}}"
+
+style-render *args:
+    blender --background --factory-startup --python-exit-code 1 --python scripts/render_style_pilot.py -- render {{args}}
+
+style-finalize destination:
+    {{python}} scripts/render_style_pilot.py finalize --output "{{destination}}"
+
+vegetation-fetch *args:
+    {{python}} scripts/fetch_vegetation.py {{args}}
+
+coverage *args:
+    {{python}} scripts/source_coverage.py {{args}}
+
+terrain-fetch *args:
+    {{python}} scripts/fetch_terrain.py {{args}}
+
+context-fetch-bounded *args:
+    {{python}} scripts/fetch_context.py {{args}}
+
+# Full fixed-camera source study, with bounded public-data acquisition.
+ground-study:
+    {{python}} scripts/fetch_ground.py --bbox 139.67688 35.67835 139.70549 35.70169 --zoom 17 --max-bytes 50000000 --output data/ground-study-v2
+
+terrain-study:
+    {{python}} scripts/fetch_terrain.py --bbox 139.67688 35.67835 139.70549 35.70169 --zoom 15 --method native --output data/terrain-study-v2
+
+context-study:
+    just context-fetch-bounded --config configs/shinjuku-context.json --output data/context-study-v2 --types tran wtr veg --max-tiles 128 --max-bytes 64000000
+
+art-verify:
+    {{python}} -m unittest discover -s tests -p test_art_assets.py -v
+
+# About eight minutes on the measured CPU. Use a fresh destination for every run.
+source-study destination="renders/source-study":
+    blender --background --factory-startup --python-exit-code 1 --python scripts/render_atlas.py -- --config configs/shinjuku-source-check.json --manifest data/coverage-buildings/manifest.json --ground data/ground-study-v2/manifest.json --terrain data/terrain-study-v2/mesh.json --context data/context-study-v2/manifest.json --vegetation data/vegetation/manifest.json --guides --reference --max-source-tiles 512 --max-source-mib 1024 --output "{{destination}}"
+    {{python}} scripts/render_geometry.py finalize --index "{{destination}}/render-index.json" --assemble --verify-seams

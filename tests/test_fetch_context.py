@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from fetch_context import (
     BoundedCache,
     NoRedirect,
+    context_request_budget,
     dependency_path,
     digest,
     download_context,
@@ -182,6 +183,45 @@ class ContextFetchTests(unittest.TestCase):
             self.run_download()
         self.assertEqual(self.calls, [SOURCE])
 
+    def test_expanded_tile_budget_is_explicit_and_preflight_only(self):
+        leaf = copy.deepcopy(self.tileset["root"])
+        self.tileset["root"].pop("content")
+        self.tileset["root"]["children"] = [
+            leaf | {"content": {"uri": f"tile-{number}.b3dm"}} for number in range(65)
+        ]
+        with self.assertRaisesRegex(ValueError, "64-tile budget"):
+            self.run_download(preflight_only=True)
+        result = self.run_download(preflight_only=True, max_tiles=128)
+        self.assertEqual(result["selected_items"][0]["intersecting_tiles"], 65)
+        self.assertEqual(result["tile_budget"], 128)
+        self.assertEqual(self.calls, [SOURCE])
+        self.assertFalse(self.output.exists())
+        for invalid in (0, 513, True, 1.5):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                context_request_budget(invalid)
+        self.assertEqual(context_request_budget(512), 2080)
+
+    def test_request_budget_is_enforced_independently_of_bytes(self):
+        cache = BoundedCache(
+            self.root / "strict-cache",
+            max_requests=1,
+            opener=lambda request, timeout: Response(b"ok"),
+        )
+        cache.fetch(SOURCE)
+        with self.assertRaisesRegex(ValueError, "request budget"):
+            cache.fetch(PAYLOAD)
+        for invalid in (0, 4097, True):
+            with self.assertRaises(ValueError):
+                BoundedCache(self.root / "invalid", max_requests=invalid)
+
+    def test_injected_cache_cannot_overstate_declared_budget(self):
+        with self.assertRaisesRegex(ValueError, "Injected cache"):
+            self.run_download(max_bytes=1)
+        self.assertEqual(self.calls, [])
+        for invalid in (True, 0, 100_000_001):
+            with self.assertRaises(ValueError):
+                self.run_download(max_bytes=invalid)
+
     def test_unsupported_tileset_fails_before_payload(self):
         self.tileset["root"]["boundingVolume"] = {"box": [0] * 12}
         with self.assertRaisesRegex(ValueError, "region bounds"):
@@ -288,7 +328,7 @@ class ContextFetchTests(unittest.TestCase):
         self.assertEqual(cache.requests, 2)
 
     def test_safety_limits_and_invalid_regions(self):
-        for budget in (0, True, 25_000_001):
+        for budget in (0, True, 100_000_001):
             with self.assertRaises(ValueError):
                 BoundedCache(self.root, budget)
         for url in (

@@ -5,8 +5,9 @@ Project PLATEAU data. The goal is a continuous, explorable map in the same produ
 category as [isometric.nyc](https://isometric.nyc/), with original Tokyo artwork.
 
 **Current state:** an interactive, tiled Shinjuku source atlas, a repeatable chunk
-renderer, geographic guide layers and a source-output review workflow. The map
-is still unstyled; an illustrated district and wider Tokyo coverage remain ahead.
+renderer, geographic guide layers and a source-output review workflow. Expanded
+source coverage, reconciled terrain and mapped vegetation now support a bounded
+Shinjuku art-direction study. No final artwork or complete district is approved.
 
 ![Unstyled Shinjuku sample](previews/shinjuku-isometric.png)
 
@@ -33,9 +34,40 @@ See [source terms and full attribution](THIRD_PARTY_NOTICES.md).
   seamless illustrated atlas and interactive Tokyo map.
 - [Detailed source-quality notes and provenance](README.txt).
 
-Landmark geometry is useful, but some smaller buildings are untextured. Trees are
-currently ground photography, not 3D vegetation. Source dates and LOD vary.
+Landmark geometry is useful, but some smaller buildings are untextured. The
+original atlas above has photographic vegetation only. New studies supplement
+it with separately attributed mapped tree points and woodland representations,
+not a claimed tree survey. Source dates and LOD vary.
 The FY2025 dataset edition does not mean that all photography was taken in 2025.
+
+## Shinjuku art direction
+
+![Unapproved Shinjuku material comparison](previews/shinjuku-art/style-comparison.png)
+
+Source and mapped context compared with **Atlas ink**, **Garden city** and
+**Terracotta blocks**. Same camera and source geometry, with artistic facade
+marks, palettes and canopy representations. These are geometry-preserving
+material studies, not final illustrations or approvals.
+
+City model: Tokyo Metropolitan Government / Project PLATEAU. Imagery:
+PLATEAU-Ortho 2023. Terrain: **PLATEAU | Mapterhorn | 国土地理院**.
+Vegetation: **© OpenStreetMap contributors**, ODbL. Modified by this independent
+project. The [derived vegetation database](datasets/shinjuku-vegetation/README.txt)
+and [full source terms](THIRD_PARTY_NOTICES.md) accompany the preview.
+See [art-direction notes](docs/STYLE_PILOT.md), [coverage audit](docs/COVERAGE.md)
+and [vegetation evidence](docs/VEGETATION.md) before interpreting detail as measured.
+
+Two separate AI-assisted treatments explore a more illustrated result:
+
+| D. Pixel city | E. Printed atlas |
+| --- | --- |
+| ![AI-assisted Pixel city study](previews/shinjuku-art/ai-pixel-city.png) | ![AI-assisted Printed atlas study](previews/shinjuku-art/ai-printed-atlas.png) |
+
+Both retain a recognizable composition but redraw details and building edges.
+Pixel city adds green roofs and planting not established by the source. Neither
+is a geometry-accurate comparison layer or approved artwork. Source credits and
+terms above still apply. [Prompts, provenance and limitations](previews/shinjuku-art/ai-studies.json)
+are retained; these images have not replaced the source atlas.
 
 ## Roadmap
 

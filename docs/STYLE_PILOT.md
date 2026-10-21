@@ -1,55 +1,102 @@
-# Deterministic material pilot
+# Shinjuku art-direction studies
 
-These are **unapproved structural studies**, not the finished Tokyo artwork.
-They compare three original, restrained palettes on identical PLATEAU geometry
-and an identical isometric camera. No external image-generation service, paid
-model call or invented geometry is involved.
+These studies compare candidate treatments, not an approved final map. Source
+selection, terrain diagnostics and vegetation provenance remain separate from
+art approval. The interactive baseline still displays the original source atlas.
 
-The palette candidates are defined in `configs/style-presets.json`:
+## Geometry-preserving studies
 
-- **Paper and slate:** warm neutral ground, slate facades and pale roofs.
-- **Cool mineral:** cool neutral ground, blue-gray facades and light roofs.
-- **Warm clay:** warm gray ground, muted clay facades and cream roofs.
+`configs/shinjuku-art-presets.json` defines three original palettes:
 
-A shading-normal threshold chooses roof versus facade color. This is an artistic
-shader rule, not a claim that the source contains semantic roof labels. The
-original textured source reference is rendered before materials are substituted.
-Neither the input files nor saved source-study previews are changed.
+- **A. Atlas ink:** ivory streets, blue-gray towers, jade canopy and dark glazing.
+- **B. Garden city:** pale mineral facades, warm roofs and softer green canopy.
+- **C. Terracotta blocks:** rose facades, cream roofs, teal glazing and olive canopy.
 
-## Reproduce and inspect
+All candidates use identical building geometry, context and camera. The source
+reference is rendered first, before replacing materials. Procedural window bands
+are artistic facade marks, not recovered source windows. A shading-normal rule
+separates roof and facade colors; it is not a source semantic classification.
+Terrain heights are not changed to improve the style.
 
-The `scripts/render_style_pilot.py` Blender entry point accepts a `render`
-command with the same configuration/building/ground/terrain inputs as the source
-renderer. It defaults to a 720-pixel longest side and 64 samples. The separate
-`finalize` command runs in ordinary Python, removes renderer metadata, verifies
-nonblank images and matching dimensions, and creates a labeled comparison sheet.
-Use the project's style-pilot task rather than maintaining a separate command.
+The mapped vegetation layer uses explicit tree points and wooded polygons.
+Canopy placement within woodland, crown shape and tree dimensions are artistic.
+Mapped trees, generated woodland instances and original PLATEAU vegetation retain
+different provenance. They must not be described as one surveyed tree inventory.
+See [vegetation provenance](VEGETATION.md) and [source terms](../THIRD_PARTY_NOTICES.md).
 
-Output files:
+Roads and water retain their supplied geometry and heights. Grass polygons are
+retained in the derived vegetation database but are not indiscriminately filled
+into the rendered scene. No park-wide tree carpet is invented to hide missing
+information. Palette replacement also removes photographed ground detail, so
+paths, paving, gardens and rails still need deliberate treatment.
 
-- `source-reference.png`: the matching unstyled reference.
-- `paper.png`, `mineral.png`, `clay.png`: candidate material studies.
-- `style-comparison.png`: labeled comparison sheet.
-- `style-pilot.json`: source hashes, camera, resolution, settings, palettes,
-  attribution, output hashes and limitations.
+## Reproduce
 
-The manifest always retains `art_approval: pending-owner-review`. Finalization
-can verify assets but cannot approve an art direction. The configured status is
-also required to remain `unapproved-structural-studies`.
+Use the checked source inputs described in [coverage](COVERAGE.md) and
+[rendering](RENDERING.md), then run:
 
-## What this pilot can and cannot decide
+```sh
+just art-pilot configs/shinjuku.json \
+  data/coverage-buildings/manifest.json data/ground-study-v2/manifest.json \
+  data/terrain-study-v2/mesh.json data/context-study-v2/manifest.json \
+  data/vegetation/manifest.json
+```
 
-It can compare massing, silhouette readability, roof/facade contrast and broad
-palette. Geometry and camera remain fixed, so visual differences are not caused
-by rearranged buildings or reframing.
+This bounded task renders a matching reference and three candidates at a
+1024-pixel longest side. The finalizer strips renderer metadata without changing
+image pixels, verifies dimensions and nonblank content, computes output hashes
+and creates an attributed comparison sheet. It never grants artwork approval.
+The original, simpler palette experiment remains available through `just style-pilot`.
 
-It cannot establish the final street-level or district-wide illustration style.
-Ground is intentionally neutral, with no reconstructed street markings, railway
-tracks, trees, park planting or water treatment. Replacing photographic ground
-with a uniform material removes surface information, it does not solve that
-information gap. The missing representative ordinary-street, station, park and
-water crops remain part of the Phase 3 gate.
+The output manifest records input hashes, camera, source counts, render settings,
+palette parameters, attribution and representation limits. Its status remains
+`complete-unapproved`, with `art_approval: pending-owner-review`.
 
-The next decision is to inspect the material studies, select or revise a palette,
-then apply it to an expanded source-complete representative crop set. No candidate
-should be promoted as approved artwork, and none authorizes bulk AI generation.
+## Before choosing a direction
+
+Compare the same places across candidates:
+
+1. Tokyo Metropolitan Government towers: silhouettes and stepped roof levels.
+2. Shinjuku Central Park: mapped woodland, paths and open ground.
+3. Small surrounding buildings: readable separation without false window detail.
+4. Major roads and crossings: continuity, contrast and no vegetation over exclusions.
+5. Building-ground contact: retain any source disagreement in the audit rather
+   than hiding it behind invented heights or artwork.
+
+A palette decision does not approve geographic coverage. A convincing AI
+illustration also does not prove footprint or landmark fidelity. Any generated
+style samples must remain labeled as AI-assisted, with their original reference,
+prompt, output hash and known distortions preserved. No sample authorizes bulk
+image generation or replacing the raw comparison layer.
+
+The next art gate is owner selection or revision, followed by fidelity review on
+ordinary streets, station infrastructure, park and water crops. Seam-aware
+production and repair review follow only after that gate.
+
+## Two AI-assisted image studies
+
+The published [Pixel city](../previews/shinjuku-art/ai-pixel-city.png) and
+[Printed atlas](../previews/shinjuku-art/ai-printed-atlas.png) studies were generated
+from the same Atlas ink render in two bounded image-generation calls. The tool
+returned 1254 by 1254 pixel images. The original reference is 1024 by 1024.
+They are not aligned atlas tiles and have not been substituted into the viewer.
+
+- **D. Pixel city** uses stronger blue glazing, brick accents and a simulation-game
+  treatment. It is closer to the playful map direction, but adds unsupported
+  green roofs, street trees and paving detail.
+- **E. Printed atlas** uses finer contours and more restrained color. Its massing
+  looks closer to the source, but small roofs, facade grids and surface details
+  are still redrawn.
+
+Both retain the recognizable park/tower composition. Both reinterpret tree
+crowns, park lawns and paths, road widths, roof edges and facade details. A visual
+inspection did not identify a district-scale relocation, but that is not a
+registered footprint, height or occlusion audit. They are candidates for choosing
+an aesthetic, not evidence that unconstrained image generation is ready for
+production cartography.
+
+[ai-studies.json](../previews/shinjuku-art/ai-studies.json) records exact prompts,
+reference RGB hash, output hashes, dimensions, source notices and observed
+limits. Model version and actual cost were not exposed by the tool and are not
+invented. All candidates remain unapproved. The public source and material
+comparison is retained beside them for independent inspection.

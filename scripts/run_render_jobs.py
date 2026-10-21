@@ -11,9 +11,12 @@ from atlas import load_config, plan_chunks
 from jobs import Ledger, artifact_path, sha256
 from render_context import context_assets, verify_context_assets
 from render_geometry import finalize, relative_asset
+from render_vegetation import vegetation_identity
 
 
-def source_identity(manifest_path, ground_path, terrain_path, context_path=None):
+def source_identity(
+    manifest_path, ground_path, terrain_path, context_path=None, vegetation_path=None
+):
     manifest = json.loads(manifest_path.read_text())
     inputs = {"buildings_manifest": sha256(manifest_path), "building_glbs": {}}
     for tile in manifest["tiles"]:
@@ -37,6 +40,8 @@ def source_identity(manifest_path, ground_path, terrain_path, context_path=None)
             path.relative_to(context_path.parent.resolve()).as_posix(): checksum
             for path, checksum in assets
         }
+    if vegetation_path:
+        inputs["vegetation"] = vegetation_identity(vegetation_path)
     return inputs
 
 
@@ -50,6 +55,8 @@ def renderer_identity():
         "render_sample.py",
         "render_geometry.py",
         "render_context.py",
+        "render_vegetation.py",
+        "terrain_patch.py",
         "render_guides.py",
         "verify_guides.py",
     ]
@@ -76,7 +83,7 @@ def run_blender(config_path, destination, inputs, heartbeat, *, timeout=1800):
         "--max-chunks",
         "1",
     ]
-    for key in ("ground", "terrain", "context"):
+    for key in ("ground", "terrain", "context", "vegetation"):
         if inputs.get(key):
             command.extend(["--" + key, str(inputs[key])])
     destination.mkdir(parents=True, exist_ok=True)
@@ -121,6 +128,7 @@ def run_batch(
     ground=None,
     terrain=None,
     context=None,
+    vegetation=None,
     retry_failed=False,
     max_jobs=16,
     renderer_version="unspecified",
@@ -134,7 +142,7 @@ def run_batch(
         raise ValueError("An actual renderer version is required for job identity")
     config = load_config(config_path)
     plan = plan_chunks(config, max_chunks=max_jobs)
-    provenance = source_identity(manifest, ground, terrain, context)
+    provenance = source_identity(manifest, ground, terrain, context, vegetation)
     code = renderer_identity()
     output.mkdir(parents=True, exist_ok=True)
     inputs = {
@@ -142,6 +150,7 @@ def run_batch(
         "ground": ground.resolve() if ground else None,
         "terrain": terrain.resolve() if terrain else None,
         "context": context.resolve() if context else None,
+        "vegetation": vegetation.resolve() if vegetation else None,
     }
     ledger = Ledger(database)
     jobs = {}
@@ -193,7 +202,8 @@ def run_batch(
                         raise ValueError("Rendered chunk checksum mismatch")
                     paths.append(path.relative_to(workspace).as_posix())
                 if (
-                    source_identity(manifest, ground, terrain, context) != provenance
+                    source_identity(manifest, ground, terrain, context, vegetation)
+                    != provenance
                     or renderer_identity() != code
                 ):
                     raise ValueError(
@@ -219,7 +229,8 @@ def run_batch(
         ready = all(state in {"needs_review", "approved"} for state in states.values())
         if ready:
             if (
-                source_identity(manifest, ground, terrain, context) != provenance
+                source_identity(manifest, ground, terrain, context, vegetation)
+                != provenance
                 or renderer_identity() != code
             ):
                 raise ValueError(
@@ -300,6 +311,7 @@ def main():
     parser.add_argument("--ground", type=Path)
     parser.add_argument("--terrain", type=Path)
     parser.add_argument("--context", type=Path)
+    parser.add_argument("--vegetation", type=Path)
     parser.add_argument("--output", type=Path, default=Path("renders/batch-shinjuku"))
     parser.add_argument("--database", type=Path, default=Path(".cache/jobs.sqlite"))
     parser.add_argument("--workspace", type=Path, default=Path("."))
@@ -318,6 +330,7 @@ def main():
         ground=args.ground,
         terrain=args.terrain,
         context=args.context,
+        vegetation=args.vegetation,
         retry_failed=args.retry_failed,
         max_jobs=args.max_jobs,
         renderer_version=version,

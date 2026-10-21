@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "status": "unapproved-art-direction-studies",
+  "art_approval": "pending-owner-review",
+  "ai_styling": true,
+  "generated_date": "2026-10-21",
+  "generator": "OpenAI image-generation tool",
+  "model_version": "not exposed by tool",
+  "generation_calls": 2,
+  "generation_cost_reported": null,
+  "reference": "atlas-ink.png",
+  "reference_pixel_encoding": "RGB row-major uint8; same RGB render pixels as the tool reference, PNG ancillary metadata stripped after generation",
+  "geographic_fidelity": "not approved or quantitatively validated",
+  "production_release": false,
+  "source_metadata": "style-pilot.json",
+  "coverage_audit": "source-coverage.json",
+  "vegetation_database": "../../datasets/shinjuku-vegetation/",
+  "attribution": {
+    "city_model": "Tokyo Metropolitan Government / Project PLATEAU, Shinjuku, Shibuya and Nakano FY2025",
+    "imagery": "PLATEAU-Ortho 2023",
+    "terrain": "PLATEAU | Mapterhorn | 国土地理院",
+    "vegetation": "© OpenStreetMap contributors",
+    "terms": "../../THIRD_PARTY_NOTICES.md"
+  },
+  "modifications": "Source rendering, material substitution and artistic tree representations followed by generative image styling. Generated facades, roofs, planting and surfaces are not measured facts.",
+  "review": {
+    "method": "Visual comparison against the fixed source render, not a registered footprint, height or occlusion audit",
+    "composition": "Central Park, main tower group, cocoon-shaped tower and surrounding dense low-rise pattern remain recognizable",
+    "observed_limits": [
+      "Both images redraw small-building and roof edges, facade grids, crown shapes and park surfaces.",
+      "Pixel city adds conspicuous green roof gardens, street trees and paving embellishments not established by the input.",
+      "Printed atlas appears more restrained, but road widths, curbs, crossings, heights and occlusion are not validated.",
+      "Neither image is pixel-aligned source geometry or approved production map artwork."
+    ]
+  },
+  "candidates": [
+    {
+      "id": "pixel-city",
+      "title": "D. Pixel city",
+      "path": "ai-pixel-city.png",
+      "prompt": "Create an unapproved art-direction study for isometric.tokyo by restyling the attached exact orthographic Shinjuku render. This is a geographic map, not a perspective city illustration. Keep the same square crop, camera angle, relative scale, exact major building positions, roof outlines, stepped tower shapes, relative heights, roads and park boundary. Do not add or remove landmark towers or straighten the real streets. Dense small buildings around the edges must remain dense small buildings, not empty space. The source's repetitive facade marks are artistic placeholders and may become more varied architectural detail. Preserve small canopy locations and open spaces, do not blanket the whole park with invented trees. Give park ground a restrained grass/earth treatment without changing its outline. No title, labels, logos, legend, border, sky, horizon, oversized landmarks, blur, depth of field, photographic noise or new water bodies. Output one complete edge-to-edge square map image, no comparison panels. Art direction D, Pixel city: carefully hand-pixeled architectural cartography, readable crisp pixel clusters, restrained 16-bit simulation-game character, cream streets and roofs, cool blue-gray glazed towers, occasional muted brick and terracotta accents, deep jade vegetation, warm daylight. Detailed but clean and playful. Avoid a uniform window-grid wallpaper; use small architectural pixel rhythms that follow each facade. Strong roof and street separation, subtle short shadows, no thick cartoon outlines. Retain the recognizability of the provided geometry above all.",
+      "transparent_background": false,
+      "sha256": "f46400919812a5f5c9b3c2f9c39a08a0560d4cbac5ae4e18d6247cca500d1636",
+      "resolution_px": [
+        1254,
+        1254
+      ]
+    },
+    {
+      "id": "printed-atlas",
+      "title": "E. Printed atlas",
+      "path": "ai-printed-atlas.png",
+      "prompt": "Create an unapproved art-direction study for isometric.tokyo by restyling the attached exact orthographic Shinjuku render. This is a geographic map, not a perspective city illustration. Keep the same square crop, camera angle, relative scale, exact major building positions, roof outlines, stepped tower shapes, relative heights, roads and park boundary. Do not add or remove landmark towers or straighten the real streets. Dense small buildings around the edges must remain dense small buildings, not empty space. The source's repetitive facade marks are artistic placeholders and may become more varied architectural detail. Preserve small canopy locations and open spaces, do not blanket the whole park with invented trees. Give park ground a restrained grass/earth treatment without changing its outline. No title, labels, logos, legend, border, sky, horizon, oversized landmarks, blur, depth of field, photographic noise or new water bodies. Output one complete edge-to-edge square map image, no comparison panels. Art direction E, Printed atlas: refined hand-inked architectural map, fine clean graphite contours with selective deep-blue facade hatching, warm ivory paper-like surfaces, muted teal glass, warm terracotta roof accents, sage and olive canopy. Crisp editorial illustration with restrained color and readable roof silhouettes. Smooth flat color areas, not pixel art, not watercolor blur. Light precise architectural linework, no dense scribble or heavy comic outlines. Retain the recognizability of the provided geometry above all.",
+      "transparent_background": false,
+      "sha256": "473e485096f2d7f5b39715d7c2f0b49eac2aa64ce510fffcbf1d9dd3489e619d",
+      "resolution_px": [
+        1254,
+        1254
+      ]
+    }
+  ],
+  "reference_public_png_sha256": "b09543c6883712e703ee5ec513ed41594cbc6971aa6eb862424d6e9c18aa8320",
+  "reference_rgb_sha256": "ab72f4e2fe25775fc7981fffe6614bc61e5972b0608be84f24653746316f7fea"
+}

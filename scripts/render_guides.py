@@ -271,6 +271,7 @@ def build_guide_scene(objects, config, registry):
         kind: 0 for kind in SEMANTIC_IDS if kind not in ("background", "ground")
     }
     unresolved = dict(resolved)
+    represented_vegetation_meshes = 0
     for obj in objects:
         if obj.type != "MESH":
             continue
@@ -296,6 +297,8 @@ def build_guide_scene(objects, config, registry):
             if len(batch_ids) != len(obj.data.vertices):
                 raise ValueError("Source _BATCHID count does not match mesh vertices")
             resolved[kind] += 1
+        elif "atlas_direct_feature_key" in obj:
+            represented_vegetation_meshes += 1
         elif kind != "ground" and "atlas_fixture_feature_id" not in obj:
             unresolved[kind] += 1
         for triangle in obj.data.loop_triangles:
@@ -304,6 +307,10 @@ def build_guide_scene(objects, config, registry):
             semantic_ids.append(SEMANTIC_IDS[kind])
             if kind == "ground":
                 feature_ids.append(1)
+            elif "atlas_direct_feature_key" in obj:
+                feature_ids.append(
+                    registry["direct_feature_ids"][obj["atlas_direct_feature_key"]]
+                )
             elif "atlas_fixture_feature_id" in obj:
                 feature_ids.append(int(obj["atlas_fixture_feature_id"]))
             elif batch_ids is not None:
@@ -344,6 +351,7 @@ def build_guide_scene(objects, config, registry):
         "unresolved_building_meshes": unresolved["building"],
         "resolved_meshes_by_semantic": resolved,
         "unresolved_meshes_by_semantic": unresolved,
+        "represented_vegetation_meshes": represented_vegetation_meshes,
         "triangle_count": len(triangles),
     }
 
@@ -471,11 +479,18 @@ def guide_metadata(guide_scene, registry, registry_path, registry_sha256):
             item["kind"] == "building" for item in registry["records"]
         ),
         "source_feature_counts": {
-            kind: sum(item["kind"] == kind for item in registry["records"])
+            kind: sum(
+                item["kind"] == kind and "representation_id" not in item
+                for item in registry["records"]
+            )
             for kind in SEMANTIC_IDS
             if kind not in ("background", "ground")
         },
         "resolved_meshes_by_semantic": guide_scene["resolved_meshes_by_semantic"],
         "unresolved_meshes_by_semantic": guide_scene["unresolved_meshes_by_semantic"],
         "triangle_count": guide_scene["triangle_count"],
+        "represented_vegetation_meshes": guide_scene["represented_vegetation_meshes"],
+        "represented_vegetation_instance_count": sum(
+            "representation_id" in item for item in registry["records"]
+        ),
     }

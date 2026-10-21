@@ -1,0 +1,276 @@
+{
+  "schema_version": 1,
+  "kind": "source-coverage-audit",
+  "coverage_plan_id": "64bad1a737985461f08d45e9cce69b821aced7d3f5fda759b5fb89fca689b1a8",
+  "building_manifest_sha256": "5ea7f3cf926e62395913e243a00af114ae87790601b6e2cb45b513c9c6ba4c35",
+  "config_sha256": "4bc0d6b54304595b613751f881c63d6bf9e82738eb9ec51b3308b351c5c842a2",
+  "canonical_config": {
+    "atlas_id": "tokyo",
+    "bounds_px": [
+      0,
+      0,
+      2400,
+      2400
+    ],
+    "camera_offset_enu": [
+      1500.0,
+      -1500.0,
+      1500.0
+    ],
+    "camera_target_enu": [
+      0.0,
+      0.0,
+      120.08777160644532
+    ],
+    "chunk_size_px": 800,
+    "origin_lonlat": [
+      139.6917,
+      35.6896
+    ],
+    "overscan_px": 32,
+    "pixel_origin": [
+      1200.0,
+      1200.0
+    ],
+    "pixels_per_metre": 1.9047619047619047,
+    "release_id": "shinjuku-source-v1",
+    "render_samples": 32,
+    "render_seed": 0,
+    "schema_version": 1,
+    "shadow_buffer_m": 600.0,
+    "source_bounds_wsen": [
+      139.6873,
+      35.686,
+      139.6961,
+      35.6932
+    ],
+    "vertical_range_enu_m": [
+      -100.0,
+      650.0
+    ]
+  },
+  "view_bounds_px_with_overscan": [
+    -32,
+    -32,
+    2432,
+    2432
+  ],
+  "sun_euler_xyz_degrees": [
+    20,
+    -25,
+    -35
+  ],
+  "sun_angular_diameter_degrees": 12,
+  "shadow_receiver_height_range_enu_m": [
+    -100.0,
+    650.0
+  ],
+  "inventory_sha256": "d4211508eff1d6f51f6a63f86bee1088d8d1db8553512c0986f81474a9a71188",
+  "examined_ward_count": 23,
+  "selected_sources": [
+    {
+      "ward_code": "13104",
+      "ward_name": "Shinjuku",
+      "edition": 2025,
+      "item_id": "di_13104_bldg_lod2",
+      "tileset_url": "https://assets.cms.plateau.reearth.io/assets/00/bed0bd-f882-4cde-b942-21d0f8d2ddc2/13104_shinjuku-ku_pref_2025_citygml_1_op_bldg_3dtiles_13104_shinjuku-ku_lod2/tileset.json",
+      "metadata_sha256": "95cf280a817c068a777d5a233d60a2184d6cfd18d35c7f3a1db10bb84443a9bf",
+      "required_tiles": 62,
+      "package": {
+        "id": "6ef88f3d-5f14-4b4f-bb72-328d932f9fec",
+        "name": "plateau-13104-shinjuku-ku-2025",
+        "title": "3D都市モデル（Project PLATEAU）新宿区（2025年度）",
+        "url": "https://www.geospatial.jp/ckan/dataset/plateau-13104-shinjuku-ku-2025",
+        "metadata_modified": "2026-04-03T05:57:45.192007",
+        "license": {
+          "id": "plateau",
+          "title": "PLATEAU Site Policy 「３．著作権について」に拠る",
+          "url": "https://www.mlit.go.jp/plateau/site-policy/"
+        },
+        "resources": [
+          {
+            "id": "39818e1c-a05f-4024-a156-a0b50bb823a6",
+            "name": "索引図（v5）",
+            "format": "PDF",
+            "url": "https://assets.cms.plateau.reearth.io/assets/78/53ad93-07eb-438e-b822-51ecf507c969/13104_indexmap_op.pdf",
+            "size_bytes": null
+          },
+          {
+            "id": "c4071a71-19e9-4453-9787-100fcf3319dd",
+            "name": "CityGML（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/db/2866b9-e3c2-4bc4-83d3-b7b42e9b85a1/13104_shinjuku-ku_pref_2025_citygml_1_op.zip",
+            "size_bytes": null
+          },
+          {
+            "id": "8aabeba2-fcc6-477d-bdb4-2939ebfa2e71",
+            "name": "3D Tiles, MVT（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/2f/422bdf-d9a5-439a-8c2c-acc9c5f23f3d/13104_shinjuku-ku_pref_2025_3dtiles_mvt_1_op.zip",
+            "size_bytes": null
+          },
+          {
+            "id": "99f0b4ff-0d3e-47b3-a553-5a4df36bb563",
+            "name": "関連データセット（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/23/55e3ae-7f14-4e7e-b922-a4a09da0a714/13104_shinjuku-ku_2025_related.zip",
+            "size_bytes": null
+          }
+        ]
+      }
+    },
+    {
+      "ward_code": "13113",
+      "ward_name": "Shibuya",
+      "edition": 2025,
+      "item_id": "di_13113_bldg_lod2",
+      "tileset_url": "https://assets.cms.plateau.reearth.io/assets/16/b016d3-42ef-4428-ad99-d229310b39fd/13113_shibuya-ku_pref_2025_citygml_1_op_bldg_3dtiles_13113_shibuya-ku_lod2/tileset.json",
+      "metadata_sha256": "9c8515faec797352de024c70d6ea720a0dff40366f3302781954f5e9e7a8e383",
+      "required_tiles": 61,
+      "package": {
+        "id": "1e454280-a735-433c-bbb5-643d355f3912",
+        "name": "plateau-13113-shibuya-ku-2025",
+        "title": "3D都市モデル（Project PLATEAU）渋谷区（2025年度）",
+        "url": "https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025",
+        "metadata_modified": "2026-04-03T08:07:54.762736",
+        "license": {
+          "id": "plateau",
+          "title": "PLATEAU Site Policy 「３．著作権について」に拠る",
+          "url": "https://www.mlit.go.jp/plateau/site-policy/"
+        },
+        "resources": [
+          {
+            "id": "9d09a9e7-0712-44b7-9024-21833c7a0017",
+            "name": "索引図（v5）",
+            "format": "PDF",
+            "url": "https://assets.cms.plateau.reearth.io/assets/e6/5aa7f9-2585-4fff-aeda-126915d41f11/13113_indexmap_op.pdf",
+            "size_bytes": null
+          },
+          {
+            "id": "f7fa761b-d46a-474c-9f02-b011642b34cd",
+            "name": "CityGML（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/48/e684f3-fb86-44d4-b7e3-a3d72d54582d/13113_shibuya-ku_pref_2025_citygml_1_op.zip",
+            "size_bytes": null
+          },
+          {
+            "id": "794ddd6e-f8c0-4163-bef8-29c6b3f38514",
+            "name": "3D Tiles, MVT（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/51/de25a0-7611-4450-b650-bc0d402d00de/13113_shibuya-ku_pref_2025_3dtiles_mvt_1_op.zip",
+            "size_bytes": null
+          },
+          {
+            "id": "bd2addcd-addc-490c-b9da-4faae54ca2a7",
+            "name": "関連データセット（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/10/5ea6e8-d150-41f1-bd6b-f16548ca1421/13113_shibuya-ku_2025_related.zip",
+            "size_bytes": null
+          }
+        ]
+      }
+    },
+    {
+      "ward_code": "13114",
+      "ward_name": "Nakano",
+      "edition": 2025,
+      "item_id": "di_13114_bldg_lod2",
+      "tileset_url": "https://assets.cms.plateau.reearth.io/assets/69/c68a38-eae5-4a70-b981-497109b3e7f7/13114_nakano-ku_pref_2025_citygml_1_op_bldg_3dtiles_13114_nakano-ku_lod2/tileset.json",
+      "metadata_sha256": "2e83ba5a691bb5c181f7d8be8e3178a4783b2b0397996e64c92a203c8301ca17",
+      "required_tiles": 15,
+      "package": {
+        "id": "e039eb37-2ef9-41ce-8f52-828c3b0d3995",
+        "name": "plateau-13114-nakano-ku-2025",
+        "title": "3D都市モデル（Project PLATEAU）中野区（2025年度）",
+        "url": "https://www.geospatial.jp/ckan/dataset/plateau-13114-nakano-ku-2025",
+        "metadata_modified": "2026-04-03T08:16:51.994571",
+        "license": {
+          "id": "plateau",
+          "title": "PLATEAU Site Policy 「３．著作権について」に拠る",
+          "url": "https://www.mlit.go.jp/plateau/site-policy/"
+        },
+        "resources": [
+          {
+            "id": "dafb4d9c-90c0-4811-b617-69fe51f7fdd4",
+            "name": "索引図（v5）",
+            "format": "PDF",
+            "url": "https://assets.cms.plateau.reearth.io/assets/3a/aeab97-c739-4a8f-ad99-d4608f19dbad/13114_indexmap_op.pdf",
+            "size_bytes": null
+          },
+          {
+            "id": "984390ad-084d-4507-95f5-3072ca7598b3",
+            "name": "CityGML（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/e2/9434f5-c5ca-479e-b953-e2c27df299d1/13114_nakano-ku_pref_2025_citygml_1_op.zip",
+            "size_bytes": null
+          },
+          {
+            "id": "26b5f465-da28-448b-9f1e-c9152ebd5f50",
+            "name": "3D Tiles, MVT（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/ea/05d435-cbf9-46b1-9bbe-fa8adecbec51/13114_nakano-ku_pref_2025_3dtiles_mvt_1_op.zip",
+            "size_bytes": null
+          },
+          {
+            "id": "b25f2801-1957-4c36-b3a6-f2092a988672",
+            "name": "関連データセット（v5）",
+            "format": "ZIP",
+            "url": "https://assets.cms.plateau.reearth.io/assets/90/579f29-09b2-487e-b3e9-100c8103191e/13114_nakano-ku_2025_related.zip",
+            "size_bytes": null
+          }
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "Official metadata bounding volumes are assumed truthful; payload geometry needs downstream checks.",
+    "Selection completeness is not real-world feature completeness or acquisition-date agreement.",
+    "Shadow selection covers the recorded directional sun cone over the full configured height interval, including building receivers; diffuse/global-light transport is not bounded by this proof.",
+    "Receiver heights, terrain support and the actual render lighting must be checked against this plan before use."
+  ],
+  "required_tiles": 138,
+  "present_tiles": 138,
+  "missing_tiles": 0,
+  "missing_urls": [],
+  "extra_tiles": 0,
+  "metadata_mismatch_urls": [],
+  "tile_selection_complete": true,
+  "source_coverage_verified": false,
+  "terrain": {
+    "mesh_sha256": "f005390d06f0c99506f200b295f1d3c83ea2bb3278c8f02c283d558f99c404de",
+    "vertex_count": 47914,
+    "triangle_count": 94188,
+    "bounds_wsen": [
+      139.676875,
+      35.678333333333,
+      139.705555555556,
+      35.701736111111
+    ],
+    "required_bounds_wsen": [
+      139.67713382669388,
+      35.678657218414045,
+      139.70511434830533,
+      35.70148140055633
+    ],
+    "height_range_enu_m": [
+      53.3341475261946,
+      82.59772187076416
+    ],
+    "receiver_height_range_verified": true,
+    "terrain_surface_support_complete": true,
+    "boundary_edges": 1638,
+    "source_coverage_verified": false
+  },
+  "orthophoto": {
+    "manifest_sha256": "dacfd75e51da0c5ae674d1d373f3ede623fa5fadbcb8a9011b6f7f875076c4bc",
+    "tile_count": 132,
+    "bounds_wsen": [
+      139.6746826171875,
+      35.67737855391474,
+      139.7076416015625,
+      35.70191673285339
+    ],
+    "orthophoto_support_complete": true,
+    "source_coverage_verified": false
+  }
+}

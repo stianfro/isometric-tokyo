@@ -32,6 +32,20 @@ PRESET_KEYS = {
     "world_strength",
 }
 
+OPTIONAL_PALETTE = {"window", "road", "water", "vegetation", "bark", "groundcover"}
+OPTIONAL_NUMBERS = {"window_spacing_m": (1.5, 12.0), "floor_height_m": (2.5, 6.0)}
+
+
+def palette_for(preset):
+    """Plain original palettes remain supported; context colors are explicit."""
+    return {
+        "road": preset.get("road", preset["ground"]),
+        "water": preset.get("water", "#9cbec5"),
+        "vegetation": preset.get("vegetation", "#718f68"),
+        "bark": preset.get("bark", "#665a45"),
+        "groundcover": preset.get("groundcover", "#b3bc8c"),
+    }
+
 
 def linear_color(value):
     if not isinstance(value, str) or not HEX_COLOR.fullmatch(value):
@@ -64,7 +78,11 @@ def parse_presets(value):
         "world_strength": (0.1, 2.0),
     }
     for preset in presets:
-        if not isinstance(preset, dict) or set(preset) != PRESET_KEYS:
+        if (
+            not isinstance(preset, dict)
+            or not PRESET_KEYS <= set(preset)
+            or set(preset) - PRESET_KEYS - OPTIONAL_PALETTE - OPTIONAL_NUMBERS.keys()
+        ):
             raise ValueError("Style preset has missing or unknown fields")
         identifier = preset["id"]
         if (
@@ -85,7 +103,11 @@ def parse_presets(value):
                 raise ValueError("Style labels must be short printable text")
         for field in ("facade", "roof", "ground"):
             linear_color(preset[field])
-        for field, (low, high) in limits.items():
+        for field in OPTIONAL_PALETTE & preset.keys():
+            linear_color(preset[field])
+        for field, (low, high) in (limits | OPTIONAL_NUMBERS).items():
+            if field not in preset:
+                continue
             number = preset[field]
             if (
                 type(number) not in (int, float)
@@ -124,8 +146,55 @@ def style_material(preset):
     roof.operation = "GREATER_THAN"
     roof.inputs[1].default_value = preset["roof_normal_z_min"]
     links.new(dot.outputs["Value"], roof.inputs[0])
+    facade_color = None
+    if "window" in preset:
+        # Procedural facade marks are artistic, not measured source windows.
+        position = nodes.new("ShaderNodeSeparateXYZ")
+        links.new(geometry.outputs["Position"], position.inputs[0])
+        normal = nodes.new("ShaderNodeSeparateXYZ")
+        links.new(geometry.outputs["Normal"], normal.inputs[0])
+
+        def scalar(operation, a, b=0):
+            node = nodes.new("ShaderNodeMath")
+            node.operation = operation
+            for index, value in enumerate((a, b)):
+                if isinstance(value, (int, float)):
+                    node.inputs[index].default_value = value
+                else:
+                    links.new(value, node.inputs[index])
+            return node.outputs[0]
+
+        nx = scalar("ABSOLUTE", normal.outputs["X"])
+        ny = scalar("ABSOLUTE", normal.outputs["Y"])
+        side = scalar("GREATER_THAN", nx, ny)
+        horizontal = scalar(
+            "ADD",
+            scalar("MULTIPLY", side, position.outputs["Y"]),
+            scalar("MULTIPLY", scalar("SUBTRACT", 1, side), position.outputs["X"]),
+        )
+
+        def band(coordinate, spacing, start, end):
+            fraction = scalar("FRACT", scalar("DIVIDE", coordinate, spacing))
+            return scalar(
+                "MULTIPLY",
+                scalar("GREATER_THAN", fraction, start),
+                scalar("LESS_THAN", fraction, end),
+            )
+
+        windows = scalar(
+            "MULTIPLY",
+            band(horizontal, preset.get("window_spacing_m", 3.6), 0.18, 0.80),
+            band(position.outputs["Z"], preset.get("floor_height_m", 3.6), 0.24, 0.77),
+        )
+        glass = nodes.new("ShaderNodeMixRGB")
+        glass.inputs[1].default_value = (*linear_color(preset["facade"]), 1)
+        glass.inputs[2].default_value = (*linear_color(preset["window"]), 1)
+        links.new(windows, glass.inputs[0])
+        facade_color = glass.outputs["Color"]
     palette = nodes.new("ShaderNodeMixRGB")
     palette.inputs[1].default_value = (*linear_color(preset["facade"]), 1)
+    if facade_color:
+        links.new(facade_color, palette.inputs[1])
     palette.inputs[2].default_value = (*linear_color(preset["roof"]), 1)
     links.new(roof.outputs["Value"], palette.inputs[0])
     links.new(palette.outputs["Color"], shader.inputs["Base Color"])
@@ -160,7 +229,9 @@ def render(args):
     outputs.append(
         {
             "id": "source-reference",
-            "title": "Unstyled source reference",
+            "title": "Source and mapped context"
+            if getattr(args, "vegetation", None)
+            else "Unstyled source reference",
             "path": "source-reference.png",
         }
     )
@@ -169,13 +240,29 @@ def render(args):
         ground = material(
             "Neutral terrain " + preset["id"], linear_color(preset["ground"])
         )
+        palette = palette_for(preset)
+        context_materials = {
+            kind: material(f"{preset['id']} {kind}", linear_color(color))
+            for kind, color in palette.items()
+        }
         for obj in scene.objects:
             if obj.type != "MESH":
                 continue
+            semantic = obj.get("atlas_semantic")
+            selected = ground
+            if semantic == "building":
+                selected = building
+            elif semantic == "transportation":
+                selected = context_materials["road"]
+            elif semantic == "water":
+                selected = context_materials["water"]
+            elif semantic == "vegetation":
+                part = obj.get("vegetation_part", "canopy")
+                selected = context_materials[
+                    {"trunk": "bark", "cover": "groundcover"}.get(part, "vegetation")
+                ]
             obj.data.materials.clear()
-            obj.data.materials.append(
-                building if obj.get("atlas_semantic") == "building" else ground
-            )
+            obj.data.materials.append(selected)
             for polygon in obj.data.polygons:
                 polygon.material_index = 0
         for obj in scene.objects:
@@ -195,6 +282,11 @@ def render(args):
         "ai_styling": False,
         "external_generation_cost": 0,
         "source_geometry_changed": False,
+        "procedural_facade_details": any(
+            "window" in preset for preset in presets["presets"]
+        ),
+        "mapped_vegetation_representation": getattr(args, "vegetation", None)
+        is not None,
         "source_config_sha256": config.fingerprint,
         "source_atlas_bounds_px": list(config.bounds_px),
         "output_resolution_px": [width, height],
@@ -210,12 +302,33 @@ def render(args):
         "limitations": [
             "Unapproved structural art-direction studies, not finished illustrations.",
             "All candidates use exactly the same loaded source meshes and camera as the new unstyled reference.",
-            "Neutral terrain deliberately removes photographic surface detail; roads, railway tracks, vegetation and water are not reconstructed.",
+            "Ground photography is replaced with a palette. Context appears only where supplied; transportation is not subdivided into unverified rail/road types.",
             "Roof/facade classification is a deterministic shader rule on shading-normal Z, not source semantic roof labels.",
-            "No landmarks, roads or trees are invented to hide source gaps.",
+            "Procedural window marks and palette choices are artistic treatments, not measured facade details.",
+            "Mapped vegetation may use interpreted canopy shapes; source attribution and representation limits are retained separately.",
+            "No final art direction, terrain alignment or real-world completeness is approved by this pilot.",
         ],
     }
     (args.output / "style-pilot.json").write_text(json.dumps(metadata, indent=2) + "\n")
+
+
+def display_credits(metadata):
+    """Credit only supplied inputs, never infer the provider from a CLI flag."""
+    provenance = metadata.get("provenance", {})
+    credits = []
+    for label, value in (
+        ("City model", provenance.get("source_attribution")),
+        ("Imagery", provenance.get("ground_attribution")),
+        ("Terrain", provenance.get("terrain_attribution")),
+        ("Context", provenance.get("context", {}).get("attribution")),
+        ("Vegetation", provenance.get("vegetation", {}).get("source_attribution")),
+    ):
+        if isinstance(value, str) and value.strip():
+            credits.append(f"{label}: {' '.join(value.split())}")
+    credits.append(
+        "Modified independent study. No endorsement. Artistic details are not measured source facts."
+    )
+    return credits
 
 
 def finalize(directory: Path):
@@ -249,12 +362,14 @@ def finalize(directory: Path):
         entry.update(sha256=file_hash(target), width=size[0], height=size[1])
         images.append((entry["title"], clean))
     padding, label = 20, 48
+    credits = display_credits(metadata)
+    footer = len(credits) * 24 + padding
     columns, rows = 2, math.ceil(len(images) / 2)
     sheet = Image.new(
         "RGB",
         (
             columns * size[0] + (columns + 1) * padding,
-            rows * (size[1] + label) + (rows + 1) * padding + 44,
+            rows * (size[1] + label) + (rows + 1) * padding + 44 + footer,
         ),
         "#f5f3ed",
     )
@@ -276,11 +391,33 @@ def finalize(directory: Path):
         draw.text((x, y), title, fill="#26353b", font=font)
         draw.text(
             (x, y + 25),
-            "Same geometry and camera; surface detail is incomplete",
+            "Fixed camera; source geometry plus declared treatments",
             fill="#59656a",
             font=small,
         )
         sheet.paste(image, (x, y + label))
+    for number, credit in enumerate(credits):
+        # The bundled bitmap font lacks Japanese glyphs. Full attribution remains
+        # in the manifest and adjacent publication captions.
+        credit = credit.replace("国土地理院", "GSI Japan")
+        credit_font = small
+        if draw.textlength(credit, font=credit_font) > sheet.width - 2 * padding:
+            credit_font = ImageFont.load_default(
+                size=max(
+                    4,
+                    int(
+                        16
+                        * (sheet.width - 2 * padding)
+                        / draw.textlength(credit, font=small)
+                    ),
+                )
+            )
+        draw.text(
+            (padding, sheet.height - footer + number * 24),
+            credit,
+            fill="#59656a",
+            font=credit_font,
+        )
     sheet_path = directory / "style-comparison.png"
     sheet.save(sheet_path)
     metadata["comparison"] = {
@@ -290,6 +427,7 @@ def finalize(directory: Path):
         "height": sheet.height,
     }
     metadata["status"] = "complete-unapproved"
+    metadata["display_attribution"] = credits
     path.write_text(json.dumps(metadata, indent=2) + "\n")
     return metadata
 
@@ -306,6 +444,8 @@ def main():
     rendering.add_argument("--manifest", type=Path, required=True)
     rendering.add_argument("--ground", type=Path)
     rendering.add_argument("--terrain", type=Path)
+    rendering.add_argument("--context", type=Path)
+    rendering.add_argument("--vegetation", type=Path)
     rendering.add_argument("--output", type=Path, required=True)
     rendering.add_argument("--resolution", type=int, default=720)
     rendering.add_argument("--samples", type=int, default=64)
@@ -318,7 +458,7 @@ def main():
     if args.command == "render":
         if (
             not 1 <= args.samples <= 256
-            or not 1 <= args.max_source_tiles <= 128
+            or not 1 <= args.max_source_tiles <= 512
             or not 1 <= args.max_source_mib <= 512
         ):
             parser.error("Pilot sample/source limits exceed the bounded study")

@@ -12,6 +12,25 @@ from pathlib import Path
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
+try:
+    from .terrain_patch import (
+        TerrainTile,
+        boundary_diagnostics,
+        grid_bounds,
+        interpolation_diagnostics,
+        native_patch,
+        shared_lattice,
+    )
+except ImportError:
+    from terrain_patch import (
+        TerrainTile,
+        boundary_diagnostics,
+        grid_bounds,
+        interpolation_diagnostics,
+        native_patch,
+        shared_lattice,
+    )
+
 LAYER_URL = "https://tile.plateauview.mlit.go.jp/terrain/layer.json"
 DEFAULT_BBOX = (139.6873, 35.6860, 139.6961, 35.6932)
 
@@ -97,7 +116,7 @@ def decode_mesh(payload: bytes, bounds: tuple[float, ...]) -> tuple[list, list]:
     return vertices, faces
 
 
-def fetch(url: str, path: Path) -> bytes:
+def fetch(url: str, path: Path, *, max_bytes=12_000_000) -> bytes:
     if not path.exists():
         request = Request(
             url,
@@ -107,9 +126,13 @@ def fetch(url: str, path: Path) -> bytes:
             },
         )
         with urlopen(request, timeout=40) as response:
-            payload = response.read()
+            payload = response.read(max_bytes + 1)
+        if len(payload) > max_bytes:
+            raise ValueError("Terrain response exceeds remaining byte budget")
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(payload)
+    if path.stat().st_size > max_bytes:
+        raise ValueError("Cached terrain exceeds remaining byte budget")
     return path.read_bytes()
 
 
@@ -118,16 +141,51 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("data/terrain"))
     parser.add_argument("--bbox", type=float, nargs=4, default=DEFAULT_BBOX)
     parser.add_argument("--zoom", type=int, default=14, choices=range(19))
+    parser.add_argument("--max-tiles", type=int, default=128)
+    parser.add_argument("--max-source-bytes", type=int, default=12_000_000)
+    parser.add_argument("--lattice-denominator", type=int, default=14400)
+    parser.add_argument("--method", choices=("native", "lattice"), default="native")
+    parser.add_argument("--max-vertices", type=int, default=500000)
     args = parser.parse_args()
+    if (
+        not 1 <= args.max_tiles <= 512
+        or not 1 <= args.max_source_bytes <= 100_000_000
+        or not 4 <= args.max_vertices <= 2_000_000
+    ):
+        parser.error("Invalid explicit terrain safety limits")
+    lattice = grid_bounds(args.bbox, args.lattice_denominator)
+    sampling_bbox = tuple(value / args.lattice_denominator for value in lattice)
+    # grid_bounds is west,south,east,north in integer global lattice coordinates.
+    if (
+        args.method == "lattice"
+        and (lattice[2] - lattice[0] + 1) * (lattice[3] - lattice[1] + 1)
+        > args.max_vertices
+    ):
+        parser.error("Shared terrain lattice exceeds its vertex budget before download")
+
     output = args.output
-    layer = json.loads(fetch(LAYER_URL, output / "layer.json"))
+    layer_payload = fetch(
+        LAYER_URL, output / "layer.json", max_bytes=args.max_source_bytes
+    )
+    source_bytes = len(layer_payload)
+    layer = json.loads(layer_payload)
     if layer.get("projection") != "EPSG:4326" or layer.get("scheme") != "tms":
         raise ValueError("Expected TMS geodetic tiles")
     if layer.get("format") != "quantized-mesh-1.0" or args.zoom > layer["maxzoom"]:
         raise ValueError("Unsupported terrain format or zoom")
-    tiles = tile_range(tuple(args.bbox), args.zoom)
-    if len(tiles) > 16:
-        raise ValueError("Terrain sample is limited to 16 tiles")
+    # Include both owners when a patch boundary lies exactly on a source tile edge.
+    # This makes lexicographic boundary ownership independent of patch selection.
+    guard = 1e-10
+    source_bbox = (
+        max(-180, sampling_bbox[0] - guard),
+        max(-90, sampling_bbox[1] - guard),
+        min(180, sampling_bbox[2] + guard),
+        min(90, sampling_bbox[3] + guard),
+    )
+    tiles = tile_range(source_bbox, args.zoom)
+    if len(tiles) > args.max_tiles:
+        raise ValueError("Terrain selection exceeds explicit tile budget")
+    source_meshes = []
     vertices, faces, tile_metadata = [], [], []
     for x, y in tiles:
         relative = f"tiles/{args.zoom}/{x}/{y}.terrain"
@@ -135,9 +193,13 @@ def main() -> None:
             LAYER_URL,
             layer["tiles"][0].format(z=args.zoom, x=x, y=y, version=layer["version"]),
         )
-        payload = fetch(url, output / relative)
+        payload = fetch(
+            url, output / relative, max_bytes=args.max_source_bytes - source_bytes
+        )
+        source_bytes += len(payload)
         bounds = tile_bounds(x, y, args.zoom)
         tile_vertices, tile_faces = decode_mesh(payload, bounds)
+        source_meshes.append(TerrainTile(bounds, tile_vertices, tile_faces))
         start = len(vertices)
         vertices.extend(tile_vertices)
         faces.extend([[index + start for index in face] for face in tile_faces])
@@ -156,13 +218,38 @@ def main() -> None:
             f"Decoded {url}: {len(tile_vertices)} vertices, {len(tile_faces)} triangles",
             flush=True,
         )
+    original_vertices, original_triangles = len(vertices), len(faces)
+    patch_builder = native_patch if args.method == "native" else shared_lattice
+    vertices, faces, reconciliation = patch_builder(
+        source_meshes,
+        args.bbox,
+        denominator=args.lattice_denominator,
+        max_vertices=args.max_vertices,
+    )
+    reconciliation["original_boundary_diagnostics"] = boundary_diagnostics(
+        source_meshes
+    )
+    if args.method == "lattice":
+        reconciliation["resampling_error"] = interpolation_diagnostics(
+            source_meshes, vertices, reconciliation
+        )
     mesh = {
         "source": "PLATEAU-Terrain",
         "source_url": LAYER_URL,
         "documentation_url": "https://docs.plateauview.mlit.go.jp/datasets/terrain/",
         "attribution": "PLATEAU | Mapterhorn | 国土地理院",
         "license_url": "https://www.mlit.go.jp/plateau/site-policy/",
-        "processing": "Quantized-mesh core decoded to geographic vertices; optional normals omitted. Full intersecting terrain tiles retained.",
+        "processing": reconciliation["method"],
+        "schema_version": 2,
+        "reconciliation": reconciliation,
+        "source_bytes": source_bytes,
+        "source_original_vertex_count": original_vertices,
+        "source_original_triangle_count": original_triangles,
+        "layer_metadata_sha256": hashlib.sha256(layer_payload).hexdigest(),
+        "source_coverage_verified": False,
+        "source_selection_guard_degrees": guard,
+        "additional_geoid_correction_m": 0,
+        "smooth_shading": True,
         "height_reference": "WGS84 ellipsoidal height in metres, geoid correction already applied by source",
         "requested_bbox_wsen": args.bbox,
         "zoom": args.zoom,
@@ -171,9 +258,11 @@ def main() -> None:
         "triangles": faces,
         "tiles": tile_metadata,
     }
-    (output / "mesh.json").write_text(
+    temporary = output / "mesh.tmp"
+    temporary.write_text(
         json.dumps(mesh, separators=(",", ":"), ensure_ascii=False) + "\n"
     )
+    temporary.replace(output / "mesh.json")
     print(
         f"Saved {len(vertices)} vertices, heights {mesh['height_range_m']} to {output / 'mesh.json'}"
     )

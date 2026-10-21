@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "atlas_id": "tokyo",
+  "release_id": "shinjuku-source-corrected-v2",
+  "origin_lonlat": [
+    139.6917,
+    35.6896
+  ],
+  "camera_target_enu": [
+    0.0,
+    0.0,
+    120.08777160644532
+  ],
+  "camera_offset_enu": [
+    1500.0,
+    -1500.0,
+    1500.0
+  ],
+  "pixel_origin": [
+    180,
+    180
+  ],
+  "pixels_per_metre": 0.2857142857142857,
+  "bounds_px": [
+    0,
+    0,
+    360,
+    360
+  ],
+  "source_bounds_wsen": [
+    139.6873,
+    35.686,
+    139.6961,
+    35.6932
+  ],
+  "chunk_size_px": 120,
+  "overscan_px": 8,
+  "vertical_range_enu_m": [
+    -100.0,
+    650.0
+  ],
+  "shadow_buffer_m": 600.0,
+  "render_samples": 1024,
+  "render_seed": 0
+}

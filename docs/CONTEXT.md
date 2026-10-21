@@ -5,7 +5,7 @@ water (`wtr`) from the verified source inventory. It downloads individual 3D
 Tiles contents, not ward archives. This is a source-quality probe and a generic
 import foundation, not a complete context layer or an approved atlas release.
 
-## Current Shinjuku result
+## Original small Shinjuku result
 
 The **2026-10-21** probe uses `configs/shinjuku.json` source bounds:
 139.6873 west, 35.6860 south, 139.6961 east, 35.6932 north.
@@ -38,6 +38,27 @@ all roads, water or vegetation are present. `source_coverage_verified` and
 `acquisition_dates_verified` remain false. Catalog edition is not a claim about
 capture date or temporal alignment with the building source.
 
+## Expanded fixed-camera study
+
+The corrected source study uses the full visible-ground bounds in
+`configs/shinjuku-context.json`, not only the original 800 m building selection.
+`just context-study` fetches 101 original tiles under an explicit 64 MB cap:
+
+| Category | LOD | Tiles | Original features |
+| --- | ---: | ---: | ---: |
+| Transportation | 3 | 92 | 2,388 |
+| Plant cover | 3 | 3 | 22 |
+| Individual vegetation | 3 | 4 | 37 |
+| Water | 1 | 2 | 107 |
+
+The completed package contains 48,748,150 distinct source bytes. All 307 recorded
+assets were hash-verified and the GLBs have no external dependencies. The
+vegetation tiles are east of Central Park, not evidence of trees throughout the
+park. The separate [mapped vegetation adapter](VEGETATION.md) addresses that
+local gap without relabeling artistic crowns as surveyed PLATEAU features.
+The geographic bounds select whole tiles, so feature counts include offscreen
+records and do not constitute a visible-feature census.
+
 ## Run
 
 ```sh
@@ -48,14 +69,14 @@ just context-preflight
 just context-fetch
 
 # Optional CLI controls for another preflight.
-python3 scripts/fetch_context.py --types veg --max-lod 1 --preflight-only
+just context-fetch-bounded --types veg --max-lod 1 --preflight-only
 ```
 
 Defaults use the committed inventory snapshot, Shinjuku config and a
 checksummed `.cache/context-downloads` cache. The CLI's default type is
 vegetation, so a full default download deliberately fails when there is no
 intersection. `--types veg tran wtr` requests the combined sample. `--config`,
-`--inventory`, `--output`, `--cache`, `--max-lod` and `--max-bytes` are explicit
+`--inventory`, `--output`, `--cache`, `--max-lod`, `--max-tiles` and `--max-bytes` are explicit
 controls. Outputs remain under ignored `data/context` by default.
 
 The selector chooses the highest allowed LOD separately for each catalog
@@ -65,10 +86,13 @@ dataset. Requested categories missing from the inventory fail explicitly.
 
 ## Limits and failure behavior
 
-- A hard maximum of **25,000,000 bytes** applies separately to distinct source
-  inputs and actual response-body bytes read in a run. A smaller `--max-bytes`
-  value is allowed. Cached inputs still count toward the source limit.
-- Requests are limited to 128, with at most one retry per request. Partial
+- The default **25,000,000-byte** budget applies separately to distinct source
+  inputs and actual response-body bytes read in a run. An explicit `--max-bytes`
+  may raise it to at most **100,000,000 bytes** for a measured expanded study.
+  Cached inputs still count toward the source limit.
+- Requests default to 128. An explicit tile limit above 64 allows at most
+  `4 * max_tiles + 32` requests, capped at 2,080, including retries. At most one
+  retry is allowed per request. Partial
   transfers count toward the actual network budget. Content-Length is checked
   before payload reads when supplied. Unknown-length streams stop at the limit
   without reading an extra byte to guess EOF.
@@ -76,7 +100,9 @@ dataset. Requested categories missing from the inventory fail explicitly.
   whole-model ZIP/7z archives are rejected. Cache hashes are rechecked on use.
 - All selected tileset metadata is inspected before any model payload is
   downloaded. Metadata is limited to 2 MB per item and 100,000 explicit nodes;
-  no more than 64 intersecting tiles are accepted per source item.
+  the default maximum is 64 intersecting tiles across all selected items. An
+  explicit `--max-tiles` may raise the total to at most 512. Preflight rejects
+  larger selections before fetching model payloads.
 - The current adapter requires explicit finite geographic region bounds and
   b3dm or GLB contents. Box/sphere bounds, implicit tiling, external tilesets,
   multiple contents and unsupported dependency paths fail rather than being

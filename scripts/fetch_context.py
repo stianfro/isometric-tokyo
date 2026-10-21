@@ -23,6 +23,7 @@ from atlas import load_config
 from fetch_sample import batch_scalar_values, glb_json, select_leaf_tiles, unpack_b3dm
 
 MAX_BUDGET_BYTES = 25_000_000
+MAX_EXPLICIT_BUDGET_BYTES = 100_000_000
 MODEL_TYPES = {"veg", "tran", "wtr"}
 SOURCE_HOSTS = {"assets.cms.plateau.reearth.io"}
 MARKER = ".plateau-context"
@@ -68,9 +69,17 @@ class NoRedirect(HTTPRedirectHandler):
 class BoundedCache:
     """Checksummed URL cache with separate hard source and actual-network budgets."""
 
-    def __init__(self, root, max_bytes=MAX_BUDGET_BYTES, *, opener=None):
-        if type(max_bytes) is not int or not 1 <= max_bytes <= MAX_BUDGET_BYTES:
-            raise ValueError("Context byte budget must be in [1,25000000]")
+    def __init__(
+        self, root, max_bytes=MAX_BUDGET_BYTES, *, opener=None, max_requests=128
+    ):
+        if (
+            type(max_bytes) is not int
+            or not 1 <= max_bytes <= MAX_EXPLICIT_BUDGET_BYTES
+        ):
+            raise ValueError("Context byte budget must be in [1,100000000]")
+        if type(max_requests) is not int or not 1 <= max_requests <= 4096:
+            raise ValueError("Context request budget must be in [1,4096]")
+        self.max_requests = max_requests
         self.root, self.max_bytes = Path(root), max_bytes
         self.opener = opener if opener is not None else build_opener(NoRedirect()).open
         self.network_bytes, self.source_bytes, self.requests = 0, 0, 0
@@ -93,7 +102,7 @@ class BoundedCache:
         else:
             self.root.mkdir(parents=True, exist_ok=True)
             for attempt in range(2):
-                if self.requests >= 128:
+                if self.requests >= self.max_requests:
                     raise ValueError("Context request budget exhausted")
                 self.requests += 1
                 try:
@@ -277,7 +286,15 @@ def dependency_path(uri):
     return path
 
 
-def preflight(items, bbox, cache):
+def context_request_budget(max_tiles):
+    if type(max_tiles) is not int or not 1 <= max_tiles <= 512:
+        raise ValueError("Context tile budget must be in [1,512]")
+    # Metadata, retry and external resource allowance, never an unbounded fetch.
+    return 128 if max_tiles <= 64 else max_tiles * 4 + 32
+
+
+def preflight(items, bbox, cache, *, max_tiles=64):
+    context_request_budget(max_tiles)
     plans = []
     for item in items:
         raw = cache.fetch(item["url"])
@@ -286,8 +303,8 @@ def preflight(items, bbox, cache):
         data = json.loads(raw)
         validate_tileset(data)
         selected = select_leaf_tiles(data, bbox)
-        if len(selected) > 64:
-            raise ValueError("Context source selects more than 64 tiles")
+        if len(selected) + sum(len(plan["tiles"]) for plan in plans) > max_tiles:
+            raise ValueError(f"Context sources exceed the {max_tiles}-tile budget")
         for tile in selected:
             validate_url(urljoin(item["url"], tile["uri"]))
         plans.append({"item": item, "metadata": raw, "tiles": selected})
@@ -402,6 +419,7 @@ def download_context(
     types=("veg",),
     max_lod=3,
     max_bytes=MAX_BUDGET_BYTES,
+    max_tiles=64,
     preflight_only=False,
     cache=None,
 ):
@@ -409,8 +427,21 @@ def download_context(
     snapshot = json.loads(snapshot_raw)
     config = load_config(config_path)
     ward, items = select_items(snapshot, ward_code, types, max_lod)
-    cache = cache if cache is not None else BoundedCache(cache_path, max_bytes)
-    plans = preflight(items, list(config.source_bounds_wsen), cache)
+    request_budget = context_request_budget(max_tiles)
+    if type(max_bytes) is not int or not 1 <= max_bytes <= MAX_EXPLICIT_BUDGET_BYTES:
+        raise ValueError("Context byte budget must be in [1,100000000]")
+    if cache is not None and (
+        cache.max_bytes > max_bytes or cache.max_requests > request_budget
+    ):
+        raise ValueError("Injected cache exceeds the declared context budget")
+    cache = (
+        cache
+        if cache is not None
+        else BoundedCache(cache_path, max_bytes, max_requests=request_budget)
+    )
+    plans = preflight(
+        items, list(config.source_bounds_wsen), cache, max_tiles=max_tiles
+    )
     report = {
         "selected_items": [
             {
@@ -423,6 +454,9 @@ def download_context(
         ],
         "network_bytes": cache.network_bytes,
         "source_bytes": cache.source_bytes,
+        "byte_budget": cache.max_bytes,
+        "tile_budget": max_tiles,
+        "request_budget": cache.max_requests,
     }
     if preflight_only:
         return {"status": "metadata-preflight-only", **report}
@@ -485,7 +519,9 @@ def download_context(
             "acquisition_dates_verified": False,
             "download_bytes": cache.network_bytes,
             "source_bytes": cache.source_bytes,
-            "byte_budget": max_bytes,
+            "byte_budget": cache.max_bytes,
+            "tile_budget": max_tiles,
+            "request_budget": cache.max_requests,
             "tile_count": len(tiles),
             "feature_count": (
                 sum(tile["feature_count"] for tile in tiles)
@@ -526,6 +562,7 @@ def main():
     )
     parser.add_argument("--max-lod", type=int, default=3)
     parser.add_argument("--max-bytes", type=int, default=MAX_BUDGET_BYTES)
+    parser.add_argument("--max-tiles", type=int, default=64)
     parser.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
     result = download_context(
@@ -536,6 +573,7 @@ def main():
         types=tuple(args.types),
         max_lod=args.max_lod,
         max_bytes=args.max_bytes,
+        max_tiles=args.max_tiles,
         preflight_only=args.preflight_only,
     )
     if result["status"] == "complete":

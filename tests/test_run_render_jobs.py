@@ -78,6 +78,34 @@ class BatchTests(unittest.TestCase):
             runner=self.render,
         )
 
+    def test_vegetation_and_terrain_changes_invalidate_completed_jobs(self):
+        vegetation = self.root / "vegetation.json"
+        data = {"schema_version": 1, "kind": "source-vegetation", "canopy_samples": []}
+        vegetation.write_text(json.dumps(data))
+        terrain = self.root / "terrain.json"
+        terrain.write_text("first source terrain")
+
+        def run():
+            return run_batch(
+                self.config,
+                self.manifest,
+                self.output,
+                self.database,
+                self.root,
+                vegetation=vegetation,
+                terrain=terrain,
+                renderer_version="fixture-1",
+                runner=self.render,
+            )
+
+        self.assertEqual(run()["rendered_this_run"], 2)
+        self.assertEqual(run()["rendered_this_run"], 0)
+        data["source"] = {"attribution": "changed source provenance"}
+        vegetation.write_text(json.dumps(data))
+        self.assertEqual(run()["rendered_this_run"], 2)
+        terrain.write_text("changed terrain")
+        self.assertEqual(run()["rendered_this_run"], 2)
+
     def test_complete_batch_does_not_repeat_work(self):
         result = self.run_batch()
         self.assertTrue(result["ready_for_review"])

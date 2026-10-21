@@ -8,7 +8,14 @@ from pathlib import Path
 from PIL import Image, PngImagePlugin
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from render_style_pilot import finalize, linear_color, output_size, parse_presets
+from render_style_pilot import (
+    display_credits,
+    finalize,
+    linear_color,
+    output_size,
+    palette_for,
+    parse_presets,
+)
 
 
 class StylePresetTests(unittest.TestCase):
@@ -44,12 +51,57 @@ class StylePresetTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 parse_presets(value)
 
+    def test_art_palettes_keep_context_distinct_and_explicit(self):
+        path = Path(__file__).resolve().parents[1] / "configs/shinjuku-art-presets.json"
+        art = parse_presets(json.loads(path.read_text()))
+        self.assertEqual(len(art["presets"]), 3)
+        for preset in art["presets"]:
+            palette = palette_for(preset)
+            self.assertNotEqual(palette["road"], palette["vegetation"])
+            self.assertNotEqual(palette["water"], palette["groundcover"])
+            self.assertIn("window", preset)
+            self.assertIn("floor_height_m", preset)
+        art["presets"][0]["floor_height_m"] = float("inf")
+        with self.assertRaises(ValueError):
+            parse_presets(art)
+
+    def test_optional_context_palette_fields_are_validated(self):
+        for field, value in (
+            ("water", "blue"),
+            ("vegetation", "#12345g"),
+            ("window_spacing_m", 0),
+            ("floor_height_m", True),
+        ):
+            bad = copy.deepcopy(self.presets)
+            bad["presets"][0][field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                parse_presets(bad)
+        self.assertEqual(
+            palette_for(self.presets["presets"][0])["road"],
+            self.presets["presets"][0]["ground"],
+        )
+
     def test_palette_conversion_is_linear_srgb(self):
         self.assertEqual(linear_color("#000000"), (0, 0, 0))
         self.assertEqual(linear_color("#ffffff"), (1, 1, 1))
         self.assertAlmostEqual(linear_color("#808080")[0], 0.21586050011389926)
         with self.assertRaises(ValueError):
             linear_color([1, 2, 3])
+
+    def test_display_credits_follow_actual_input_provenance(self):
+        minimal = {"provenance": {"source_attribution": "Example city"}}
+        text = " ".join(display_credits(minimal))
+        self.assertIn("Example city", text)
+        self.assertNotIn("Imagery:", text)
+        self.assertNotIn("Terrain:", text)
+        self.assertNotIn("OpenStreetMap", text)
+        alternate = {
+            "mapped_vegetation_representation": True,
+            "provenance": {"vegetation": {"source_attribution": "Example trees"}},
+        }
+        text = " ".join(display_credits(alternate))
+        self.assertIn("Vegetation: Example trees", text)
+        self.assertNotIn("OpenStreetMap", text)
 
     def test_preview_dimensions_preserve_the_view(self):
         self.assertEqual(output_size([0, 0, 2400, 2400], 720), (720, 720))

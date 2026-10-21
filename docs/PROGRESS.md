@@ -6,8 +6,8 @@ source-quality result as the finished illustrated Tokyo map.
 | Phase | Status | Implemented and remaining work |
 | --- | --- | --- |
 | 1: interactive source map | Implemented and tested | Tiled source/geometry viewer, minimap, keyboard/touch controls, shared views, credits, errors and matching atlas contract |
-| 2: repeatable source atlas | In progress | Global pixel grid, no geometry cuts at chunk edges, corrected ground mapping, real and synthetic 3 x 3 seam checks, exact building-ID/depth/normal/semantic guides, 23-ward metadata inventory; road/water context with original feature IDs; buffered source completeness and terrain reconciliation remain |
-| 3: art direction | Not approved | Three deterministic material candidates and a matching raw reference are rendered; broader representative crops, fidelity review and owner approval are required before bulk artwork |
+| 2: repeatable source atlas | In progress | Global pixel grid, no geometry cuts at chunk edges, corrected ground mapping, real and synthetic 3 x 3 seam checks, exact building-ID/depth/normal/semantic guides, 23-ward metadata inventory; road/water context with original feature IDs; bounded camera/sun source-selection audit, native terrain edge welding and separately attributed mapped vegetation; actual-world completeness and remaining vertical disagreements still need review |
+| 3: art direction | Not approved | Three context-aware material candidates, a matching expanded source reference and two labeled AI-assisted studies; broader representative crops, fidelity review and owner approval are required before bulk artwork |
 | 4: production workflow | In progress | Resumable bounded render batches, leases/retries, checksum-gated review desk, sparse image pyramids and incremental rebuilds; bounded paired seam review, immutable repair import and reviewed repair-aware chunk export; map-based review navigation and art-generation accounting remain |
 | 5: illustrated Shinjuku | Pending | Requires approved art direction, complete local source treatment and district-wide review |
 | 6: connected Tokyo expansion | Pending | Requires district measurements and accepted coverage batches |
@@ -52,13 +52,42 @@ source-quality result as the finished illustrated Tokyo map.
   Published Shinjuku vegetation items have no intersecting tiles in this bbox at
   LOD1 or LOD3. Missing trees are not replaced with invented source claims.
 
+## Expanded source and art study
+
+- The fixed world camera now loads 138 building tiles across Shinjuku, Shibuya
+  and Nakano, with 16,859 source building identities. The bounded audit finds
+  zero missing or mismatched planned tiles, including 16 shadow-only tiles.
+- A 132-tile native-z17 orthophoto mosaic covers the visible ground. Its pixels
+  match the checked original XYZ tiles in their correct positions.
+- Native z15 terrain preserves interior source heights, welds 49 matching tile
+  boundaries with at most 0.000619 m correction, and has no open interior edges.
+  No uniform geoid adjustment or height smoothing was applied.
+- Expanded context includes 2,388 transportation, 107 water and 59 original
+  vegetation features. Separately, 182 mapped tree locations and 901 artistic
+  woodland crowns are represented with explicit OSM/ODbL provenance.
+- The actual adapted vegetation database is published under ODbL, separate from
+  the code licence. Park boundaries are never treated as woodland footprints.
+- The corrected 360 px, nine-chunk source render passes unchanged seam thresholds
+  at 1,024 samples: textured mean/boundary error 0.9291/1.1245; geometry
+  0.8916/1.0697. All seven guide artifacts match the full-view reference exactly,
+  with zero background pixels and all 138 building/101 context meshes resolved.
+- A scoped Blender import adapter preserves scalar uint16 batch IDs that the
+  importer previously dropped. An affected tile retains all 470 genuine IDs and
+  identical vertex/triangle hashes; source files are not rewritten.
+- Three fixed-geometry material studies and two AI-assisted treatments are
+  available in [the art comparison](STYLE_PILOT.md). The AI candidates preserve
+  recognizable composition but redraw details; neither is an approved map layer.
+
 ## What the map does not yet claim
 
 The displayed atlas is still the attributed raw source study. It has mixed LOD,
 missing textures, photographic shadows and cropped coverage edges. The new
 renderer retains whole loaded geometry, but loaded geometry is not proof that
-all offscreen shadows and occluders are present. Every new render continues to
-record `source_coverage_verified: false` until an influence-area audit passes.
+all real-world features are present. The new bounded audit verifies selected
+metadata volumes for this view and directional sun, full terrain support and the
+orthophoto tile grid. `source_coverage_verified: false` still records unknown
+real-world completeness and source accuracy, rather than contradicting those
+narrower passed checks. Diffuse illumination is not covered by the sun-cone audit.
 
 No final art direction has been approved, no paid bulk image generation has run,
 and no district or 23-ward completion claim is made. Source-review approvals do
@@ -66,10 +95,10 @@ not constitute final artwork approval.
 
 ## Next acceptance gates
 
-1. Review the measured road/water terrain separations. Resolve the vegetation
-   gap using compatible data or an explicitly documented artistic treatment.
-2. Prove that the source influence envelope includes every required occluder and
-   shadow caster. Reconcile terrain edges and inspect building-ground offsets.
+1. Review the expanded source selection and its explicit metadata/sun-cone
+   assumptions. Catalog completeness is not completeness of the real city.
+2. Inspect remaining building/road/water terrain separations and mapped vegetation
+   placement. Source heights stay unchanged unless a defensible correction exists.
 3. Compare original art-direction candidates on representative geography, then
    obtain style approval. Preserve raw-reference comparison and guide constraints.
 4. Exercise repair review and regeneration on real artwork after source/style
@@ -87,3 +116,8 @@ The inactive `ci/checks.yml` workflow template runs the
 non-Blender suites and browser tests once installed as a GitHub workflow. The
 current publishing credential cannot add workflow files, so no remote CI result
 is claimed. YAML changes are validated with `yq`.
+
+Latest verification: 253 Python tests, 67 viewer tests, 6 review-model tests and
+32 headless browser tests pass (358 total). The baseline viewer build, atlas
+verification, fresh synthetic seam fixture and expanded real-source seam/guide
+comparison pass. No remote CI execution is claimed.

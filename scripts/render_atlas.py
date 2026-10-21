@@ -39,6 +39,11 @@ def arguments():
     parser.add_argument("--ground", type=Path)
     parser.add_argument("--terrain", type=Path)
     parser.add_argument(
+        "--vegetation",
+        type=Path,
+        help="Optional source-located, explicitly artistic vegetation representation",
+    )
+    parser.add_argument(
         "--context",
         type=Path,
         help="Optional checked PLATEAU transportation, water or vegetation manifest",
@@ -150,6 +155,17 @@ def prepare_source(args, config):
         ]
     if args.terrain:
         source_paths.append(args.terrain)
+    vegetation_inputs = []
+    if getattr(args, "vegetation", None):
+        from render_context import asset_path
+        from render_vegetation import load_vegetation
+
+        vegetation_data = load_vegetation(args.vegetation)
+        vegetation_inputs = [
+            (asset_path(args.vegetation.parent, asset["path"]), asset["sha256"])
+            for asset in vegetation_data.get("assets", [])
+        ]
+        source_paths += [args.vegetation] + [path for path, _ in vegetation_inputs]
     source_bytes = sum(path.stat().st_size for path in source_paths)
     if source_bytes > args.max_source_mib * 1024 * 1024:
         raise ValueError("Building/ground/terrain files exceed the input byte budget")
@@ -241,7 +257,30 @@ def prepare_source(args, config):
         if args.terrain
         else None,
         "building_feature_ids_preserved": False,
-        "terrain_edge_reconciliation_performed": False,
+        "terrain_edge_reconciliation_performed": bool(
+            json.loads(args.terrain.read_text()).get("reconciliation")
+        )
+        if args.terrain
+        else False,
+        "terrain_processing": {
+            key: value
+            for key, value in json.loads(args.terrain.read_text()).items()
+            if key
+            in (
+                "schema_version",
+                "processing",
+                "height_reference",
+                "additional_geoid_correction_m",
+                "reconciliation",
+                "smooth_shading",
+                "source_original_vertex_count",
+                "source_original_triangle_count",
+                "source_bytes",
+                "layer_metadata_sha256",
+            )
+        }
+        if args.terrain
+        else None,
         "ground_uv_mapping": "Geodetic inverse at mesh vertices followed by Web Mercator UV; interpolation inside triangles",
         "limitations": [
             "All loaded meshes are retained, but unselected source tiles may contain missing occluders or shadow casters.",
@@ -281,6 +320,16 @@ def prepare_source(args, config):
         }
         provenance["limitations"].append(
             "Context meshes retain original elevations. Road/terrain overlap, water visibility and source edition alignment require review; no corrective height shift was invented."
+        )
+    if getattr(args, "vegetation", None):
+        from render_vegetation import attach_vegetation
+
+        provenance["vegetation"] = attach_vegetation(args.vegetation, ground, config)
+        provenance["input_sha256"]["vegetation-manifest"] = sha256(args.vegetation)
+        for number, (_, checksum) in enumerate(vegetation_inputs):
+            provenance["input_sha256"][f"vegetation-source-asset-{number}"] = checksum
+        provenance["limitations"].append(
+            "Vegetation crowns are artistic representations of mapped points or woodland fill, not surveyed tree geometry or measured heights."
         )
     return ground_height, stats, provenance
 
@@ -463,6 +512,10 @@ def main():
                 args.manifest, context_path=args.context
             )
             provenance["input_sha256"].update(source_hashes)
+        if getattr(args, "vegetation", None):
+            from render_vegetation import register_vegetation_objects
+
+            register_vegetation_objects(registry, list(bpy.context.scene.objects))
         guides = build_guide_scene(list(bpy.context.scene.objects), config, registry)
         registry_relative = "guides/feature-registry.json"
         registry_path = args.output / registry_relative
@@ -513,6 +566,7 @@ def main():
         "gltf_compat.py",
         "render_sample.py",
         "render_context.py",
+        "render_vegetation.py",
     ):
         versions["script-" + dependency.replace("_", "-").replace(".", "-")] = sha256(
             Path(__file__).parent / dependency

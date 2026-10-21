@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from geo import local_point, local_to_geodetic, mercator_uv, tile_matrix
-from gltf_compat import remove_external_rtc
+from gltf_compat import preserve_unsigned_short_attributes, remove_external_rtc
 
 
 def arguments():
@@ -43,7 +43,8 @@ def import_tiles(manifest_path, data, lon, lat):
                 temporary_path = Path(handle.name)
             temporary_path.replace(compatible_path)
         previous = set(bpy.data.objects)
-        bpy.ops.import_scene.gltf(filepath=str(compatible_path.resolve()))
+        with preserve_unsigned_short_attributes(payload):
+            bpy.ops.import_scene.gltf(filepath=str(compatible_path.resolve()))
         objects = set(bpy.data.objects) - previous
         matrix = Matrix(
             tile_matrix(
@@ -154,8 +155,14 @@ def ground_mesh(bounds, height, ground_path, terrain_path, lon, lat, *, clip=Tru
         faces = [(0, 1, 2, 3)]
         name = "Ground: flat display plane, not terrain"
     mesh.from_pydata(vertices, [], faces)
+    if terrain_path and data.get("smooth_shading", False):
+        for polygon in mesh.polygons:
+            polygon.use_smooth = True
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.collection.objects.link(obj)
+    if terrain_path:
+        obj["terrain_height_adjustment_m"] = 0.0
+        obj["terrain_reconciled"] = bool(data.get("reconciliation"))
     if clip:
         crop_objects([obj], bounds)
     material = bpy.data.materials.new("Ground orthophoto")
