@@ -241,3 +241,17 @@ viewer-e2e-preview: tiles
 
 preview-package-verify directory:
     {{python}} scripts/package_preview.py --verify "{{directory}}"
+
+# Native 3072px source, one camera, exact 3 by 3 source and guide cores.
+pilot-source destination="renders/shinjuku-pilot-source-v1":
+    blender --background --factory-startup --python-exit-code 1 --python scripts/render_pilot_source.py -- render --output "{{destination}}"
+    {{python}} scripts/render_pilot_source.py finalize --output "{{destination}}"
+
+pilot-source-test:
+    {{python}} -m unittest discover -s tests -p test_pilot_source.py -v
+
+art-pilot-grid *args:
+    {{python}} scripts/art_pilot.py {{args}}
+
+art-pilot-test:
+    {{python}} -m unittest discover -s tests -p test_art_pilot.py -v
