@@ -255,3 +255,19 @@ art-pilot-grid *args:
 
 art-pilot-test:
     {{python}} -m unittest discover -s tests -p test_art_pilot.py -v
+
+# Native nine-patch map. These tasks never reactivate the older image study.
+map-tiles index config evidence:
+    {{python}} scripts/build_map_release.py --index "{{index}}" --config "{{config}}" --evidence "{{evidence}}" --output viewer/public/preview
+
+map-verify:
+    {{python}} scripts/build_map_release.py --verify --output viewer/public/preview
+
+map-build: map-verify
+    cd viewer && ISOMETRIC_SKIP_PUBLIC=1 VITE_ATLAS_MANIFEST=preview/manifest.json npm run build
+
+map-package: map-build
+    {{python}} scripts/package_preview.py --build viewer/dist --preview viewer/public/preview --output renders/web-releases
+
+map-dev: map-verify
+    cd viewer && VITE_ATLAS_MANIFEST=preview/manifest.json npm run dev

@@ -7,5 +7,7 @@
   "geographic_fidelity_approved": false,
   "production_release": false,
   "bulk_generation_authorized": false,
-  "next_gate": "Representative source-constrained crops and a reviewed contiguous nine-patch art sample before district expansion."
+  "pilot_generation_authorized": true,
+  "pilot_scope": "Nine native 1024-pixel Shinjuku cores on the existing source view, with at most four bounded seam-repair calls. Publication requires visual review of every join and junction.",
+  "next_gate": "Native source-constrained nine-patch generation, source comparison and all-join visual review before pilot publication. District expansion remains a separate gate."
 }
