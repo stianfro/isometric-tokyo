@@ -256,7 +256,7 @@ art-pilot-grid *args:
 art-pilot-test:
     {{python}} -m unittest discover -s tests -p test_art_pilot.py -v
 
-# Native nine-patch map. These tasks never reactivate the older image study.
+# Native patch map. These tasks never reactivate the older image study.
 map-tiles index config evidence:
     {{python}} scripts/build_map_release.py --index "{{index}}" --config "{{config}}" --evidence "{{evidence}}" --output viewer/public/preview
 
@@ -271,3 +271,26 @@ map-package: map-build
 
 map-dev: map-verify
     cd viewer && VITE_ATLAS_MANIFEST=preview/manifest.json npm run dev
+
+# Fixed-grid geographic expansion, preserving the native pilot's coordinates.
+expansion-source-plan:
+    just coverage plan --config configs/shinjuku-expansion-source.json --output .cache/coverage/expansion-plan.json
+
+ground-fetch *args:
+    {{python}} scripts/fetch_ground.py {{args}}
+
+expansion-vegetation *args:
+    {{python}} scripts/fetch_expansion_vegetation.py {{args}}
+
+expansion-source destination="renders/shinjuku-expansion-source-v1":
+    blender --background --factory-startup --python-exit-code 1 --python scripts/render_expansion_source.py -- render --output "{{destination}}"
+    {{python}} scripts/render_expansion_source.py finalize --output "{{destination}}"
+
+expansion-source-finalize destination="renders/shinjuku-expansion-source-v1":
+    {{python}} scripts/render_expansion_source.py finalize --output "{{destination}}"
+
+expansion-source-test:
+    {{python}} -m unittest discover -s tests -p test_expansion_source.py -v
+
+art-expansion-test:
+    {{python}} -m unittest discover -s tests -p test_art_expansion.py -v

@@ -11,6 +11,8 @@ The images in `previews/` are derived renderings from:
 - Tokyo Metropolitan Government / Project PLATEAU, Shinjuku FY2025 city model.
 - Expanded Shinjuku studies also use Shibuya and Nakano FY2025 city-model tiles
   for the same camera's surrounding buildings and shadow casters.
+- The 5 × 5 source expansion also includes a Suginami FY2025 city-model tile.
+  This does not change the sources of the earlier committed previews.
 - MLIT Project PLATEAU, PLATEAU-Ortho 2023.
 - Terrain: **PLATEAU | Mapterhorn | 国土地理院**.
 
@@ -32,8 +34,10 @@ source credit and identify modifications. The local download manifest records
 the exact source URLs, checksums and selection bounds.
 
 Expanded source packages also reference the
-[Shibuya FY2025 catalog](https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025)
-and [Nakano FY2025 catalog](https://www.geospatial.jp/ckan/dataset/plateau-13114-nakano-ku-2025).
+[Shibuya FY2025 catalog](https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025),
+[Nakano FY2025 catalog](https://www.geospatial.jp/ckan/dataset/plateau-13114-nakano-ku-2025)
+and, for the 5 × 5 expansion,
+[Suginami FY2025 catalog](https://www.geospatial.jp/ckan/dataset/plateau-13115-suginami-ku-2025).
 Their recorded catalog licence points to the [PLATEAU site policy](https://www.mlit.go.jp/plateau/site-policy/),
 which permits CC BY 4.0 use for content covered by its public-data terms, subject
 to specific notices. Preserve the supplying municipality, package identity and
@@ -75,3 +79,9 @@ artistic representations, not measured individual trees. Preserve this
 qualification, data attribution and licence information with redistributed
 vegetation data and renders that use it. Rendered maps display the relevant
 source credit beside the image or in the visible map attribution.
+
+The earlier native pilot uses the adapted database in
+`datasets/shinjuku-vegetation/`. The 5 × 5 expansion uses a separate snapshot in
+`datasets/shinjuku-expansion-vegetation/`, with its own queries, checksums and
+source timestamp. Retained parent artwork keeps its original database and
+notices. Neither snapshot proves complete vegetation coverage.

@@ -19,6 +19,11 @@ park-path details are artistic. Geographic fidelity and production artwork remai
 unapproved. See [pilot results and downloads](docs/NATIVE_PILOT_RESULTS.md)
 and [the native pilot workflow](docs/NATIVE_PILOT.md).
 
+A [5 × 5 expansion workflow](docs/NATIVE_EXPANSION.md) adds sixteen neighboring
+cores at the same native scale, retaining the accepted pilot artwork and stable
+map coordinates. Its new source, artwork and reviews must pass before it becomes
+the selected map. This is a bounded next batch, not complete Shinjuku coverage.
+
 ![Earlier Pixel city Shinjuku art-direction study, AI-assisted](previews/shinjuku-art/ai-pixel-city.png)
 
 *The image above is the earlier 1254-pixel direction study, not the new nine-core
