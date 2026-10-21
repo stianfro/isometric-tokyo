@@ -21,7 +21,7 @@ INVENTORY = "web-release.json"
 MAX_BYTES = 512 * 1024 * 1024
 MAX_FILES = 100_000
 SAFE_PART = re.compile(r"^[A-Za-z0-9._-]{1,180}$")
-RELEASE_ID = re.compile(r"^shinjuku-preview-[a-f0-9]{24}$")
+RELEASE_ID = re.compile(r"^shinjuku-(?:preview|map)-[a-f0-9]{24}$")
 APP_ID = re.compile(r"^web-[a-f0-9]{24}$")
 ASSET_EXTENSIONS = {
     ".js",
@@ -91,7 +91,12 @@ def files_in(directory):
 
 
 def verify_preview(directory):
-    from build_preview_release import verify_release
+    manifest = read_json(Path(directory) / "manifest.json")
+    ident = manifest.get("id")
+    if isinstance(ident, str) and ident.startswith("shinjuku-map-"):
+        from build_map_release import verify_release
+    else:
+        from build_preview_release import verify_release
 
     return verify_release(directory)
 
