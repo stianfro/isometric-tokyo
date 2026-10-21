@@ -27,10 +27,10 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def write_index(directory, value):
-    temporary = directory / (INDEX + ".tmp")
+def write_index(directory, value, index_name=INDEX):
+    temporary = directory / (index_name + ".tmp")
     temporary.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
-    temporary.replace(directory / INDEX)
+    temporary.replace(directory / index_name)
 
 
 def strip_png_metadata(path):
@@ -150,13 +150,20 @@ def apply_ink(scene, preset):
 
 
 def render(args):
+    config = load_config(args.config)
+    return render_native(args, config, validate_camera(config), grid_plan(3072, 1024))
+
+
+def render_native(args, config, camera_plan, chunks, *, index_name=INDEX, extra=None):
+    """Render an explicitly validated finite native frame and its source guides."""
     import bpy
     from render_atlas import clear_scene, prepare_source, set_camera
     from render_sample import render_view, setup_scene
     from render_style_pilot import display_credits, parse_presets
 
-    config = load_config(args.config)
-    camera_plan = validate_camera(config)
+    width, height = camera_plan["resolution_px"]
+    if width * height > 32 * 1024**2 or width != height:
+        raise ValueError("Native square source frame exceeds the 32 MP safety limit")
     preset = next(
         preset
         for preset in parse_presets(json.loads(args.presets.read_text()))["presets"]
@@ -169,7 +176,8 @@ def render(args):
     clear_scene()
     ground_height, stats, provenance = prepare_source(args, config)
     scene, camera = setup_scene(
-        argparse.Namespace(samples=64, resolution=3072), ground_height
+        argparse.Namespace(samples=config.render_samples, resolution=width),
+        ground_height,
     )
     set_camera(scene, camera, camera_plan)
     scene.cycles.seed = config.render_seed
@@ -180,7 +188,7 @@ def render(args):
     index = {
         "schema_version": 1,
         "status": "rendering",
-        "native_resolution_px": [3072, 3072],
+        "native_resolution_px": [width, height],
         "upscaled": False,
         "ai_styling": False,
         "geographic_fidelity": "not-verified",
@@ -203,7 +211,7 @@ def render(args):
         "provenance": provenance,
         "preset": preset,
         "outputs": [],
-        "chunks": grid_plan(3072, 1024),
+        "chunks": chunks,
         "limitations": [
             "One bounded Shinjuku camera view, not complete Tokyo coverage.",
             "All cores are lossless crops of the same native source render and camera.",
@@ -211,8 +219,9 @@ def render(args):
             "Palette studies do not approve geographic fidelity or AI art registration.",
         ],
     }
+    index.update(extra or {})
     index["display_attribution"] = display_credits(index)
-    write_index(args.output, index)
+    write_index(args.output, index, index_name)
     for identifier in ("source-reference", "atlas-ink"):
         if identifier == "atlas-ink":
             apply_ink(scene, preset)
@@ -225,13 +234,13 @@ def render(args):
                 "id": identifier,
                 "path": path.name,
                 "sha256": digest(path),
-                "width": 3072,
-                "height": 3072,
+                "width": width,
+                "height": height,
                 "bytes": path.stat().st_size,
                 "render_seconds": round(time.monotonic() - frame_started, 3),
             }
         )
-        write_index(args.output, index)
+        write_index(args.output, index, index_name)
         print("PILOT_FRAME_READY " + path.name, flush=True)
     if args.guides:
         from render_guides import (
@@ -262,7 +271,7 @@ def render(args):
             {"id": "reference", "bounds_px": config.bounds_px},
             guide_scene,
             args.output,
-            max_pixels=3072**2,
+            max_pixels=width * height,
         )
         index["guide_seconds"] = round(time.monotonic() - guide_started, 3)
         provenance["building_feature_ids_preserved"] = (
@@ -275,14 +284,24 @@ def render(args):
         ]
     index["status"] = "rendered"
     index["total_render_seconds"] = round(time.monotonic() - started, 3)
-    write_index(args.output, index)
+    write_index(args.output, index, index_name)
 
 
 def finalize(directory):
+    index = json.loads((directory / INDEX).read_text())
+    width, height = index["native_resolution_px"]
+    if width != height:
+        raise ValueError("Pilot source must be square")
+    expected = grid_plan(width, width // 3, min(256, width // 3))
+    return finalize_partition(directory, expected)
+
+
+def finalize_partition(directory, expected, *, index_name=INDEX):
+    """Losslessly partition checked frames, retaining their numeric guide encodings."""
     from PIL import Image
     from render_geometry import relative_asset
 
-    index = json.loads((directory / INDEX).read_text())
+    index = json.loads((directory / index_name).read_text())
     if (
         index.get("status") not in ("rendered", "complete")
         or index.get("upscaled") is not False
@@ -291,7 +310,6 @@ def finalize(directory):
     width, height = index["native_resolution_px"]
     if width != height:
         raise ValueError("Pilot source must be square")
-    expected = grid_plan(width, width // 3, min(256, width // 3))
     for actual, planned in zip(index["chunks"], expected, strict=True):
         if any(actual.get(key) != value for key, value in planned.items()):
             raise ValueError("Pilot partition was changed")
@@ -311,8 +329,11 @@ def finalize(directory):
             chunk.setdefault("assets", {})
             assets = {}
             for kind, bounds in (
-                ("core", chunk["bounds_px"]),
-                ("context", chunk["context_bounds_px"]),
+                ("core", chunk.get("crop_bounds_px", chunk["bounds_px"])),
+                (
+                    "context",
+                    chunk.get("context_crop_bounds_px", chunk["context_bounds_px"]),
+                ),
             ):
                 relative = f"{kind}/{entry['id']}/{chunk['id']}.png"
                 target = directory / relative
@@ -360,7 +381,9 @@ def finalize(directory):
                     }
                 for chunk in index["chunks"]:
                     target = directory / f"guides/{name}/{chunk['id']}.png"
-                    guide.crop(chunk["bounds_px"]).save(target)
+                    guide.crop(chunk.get("crop_bounds_px", chunk["bounds_px"])).save(
+                        target
+                    )
                     chunk.setdefault("guides", {})[name] = {
                         "path": target.relative_to(directory).as_posix(),
                         "sha256": digest(target),
@@ -375,7 +398,9 @@ def finalize(directory):
                 raise ValueError("Invalid float guide length")
             stride = width * components * 4
             for chunk in index["chunks"]:
-                left, top, right, bottom = chunk["bounds_px"]
+                left, top, right, bottom = chunk.get(
+                    "crop_bounds_px", chunk["bounds_px"]
+                )
                 crop = b"".join(
                     data[
                         row * stride + left * components * 4 : row * stride
@@ -396,7 +421,7 @@ def finalize(directory):
     index["context_rule"] = (
         "256 pixel context clipped at native image edges, no invented padding"
     )
-    write_index(directory, index)
+    write_index(directory, index, index_name)
     return index
 
 

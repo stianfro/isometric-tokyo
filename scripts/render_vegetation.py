@@ -15,13 +15,13 @@ except ImportError:
 
 
 def load_vegetation(path):
-    if path.stat().st_size > 64_000_000:
-        raise ValueError("Vegetation manifest exceeds 64 MB input budget")
+    if path.stat().st_size > 160_000_000:
+        raise ValueError("Vegetation manifest exceeds 160 MB input budget")
     data = json.loads(path.read_text())
     if data.get("schema_version") != 1 or data.get("kind") != "source-vegetation":
         raise ValueError("Expected a source-vegetation manifest")
     samples = data.get("canopy_samples", [])
-    if not isinstance(samples, list) or len(samples) > 2000:
+    if not isinstance(samples, list) or len(samples) > 6000:
         raise ValueError("Vegetation sample count exceeds the bounded renderer limit")
     identities = set()
     for sample in samples:
@@ -60,8 +60,8 @@ def load_vegetation(path):
         if not isinstance(checksum, str) or not SHA256.fullmatch(checksum):
             raise ValueError("Vegetation source asset requires a SHA256 checksum")
         total_bytes += target.stat().st_size
-        if total_bytes > 96_000_000:
-            raise ValueError("Vegetation source assets exceed 96 MB total budget")
+        if total_bytes > 256_000_000:
+            raise ValueError("Vegetation source assets exceed 256 MB total budget")
         if hashlib.sha256(target.read_bytes()).hexdigest() != checksum:
             raise ValueError("Vegetation source asset checksum mismatch")
     return data

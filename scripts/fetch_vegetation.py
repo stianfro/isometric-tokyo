@@ -120,7 +120,24 @@ def fetch_response(query, cache, *, max_bytes=5_000_000, offline=False, opener=N
             raise ValueError("Truncated vegetation response")
     payload = json.loads(blob)
     if payload.get("remark") or not isinstance(payload.get("elements"), list):
-        raise ValueError("Overpass returned incomplete results or an error")
+        cache.mkdir(parents=True, exist_ok=True)
+        (cache / f"{key}.failure.json").write_text(
+            json.dumps(
+                {
+                    "endpoint": ENDPOINT,
+                    "query_sha256": digest(query.encode()),
+                    "bytes": len(blob),
+                    "sha256": digest(blob),
+                    "remark": payload.get("remark"),
+                    "fetched_at": datetime.now(UTC).isoformat(timespec="seconds"),
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+        raise ValueError(
+            f"Overpass returned incomplete results or an error ({len(blob)} response bytes): {payload.get('remark', 'missing elements')}"
+        )
     metadata = {
         "endpoint": ENDPOINT,
         "query_sha256": digest(query.encode()),
@@ -198,7 +215,7 @@ def geometry_for(element, kind):
     if (
         element["type"] == "relation"
         and kind == "exclusion_building"
-        and element.get("tags", {}).get("type") == "building"
+        and element.get("tags", {}).get("type") in {"building", "site"}
     ):
         bounds = element.get("bounds", {})
         west, south = coordinate(
@@ -270,12 +287,19 @@ def classify(tags):
     return None
 
 
-def normalize(payload):
+def normalize(payload, *, max_features=MAX_FEATURES, max_coordinates=MAX_COORDINATES):
+    if (
+        type(max_features) is not int
+        or type(max_coordinates) is not int
+        or not 1 <= max_features <= 90000
+        or not 1 <= max_coordinates <= 900000
+    ):
+        raise ValueError("Vegetation normalization exceeds the finite expansion budget")
     if (
         not isinstance(payload, dict)
         or payload.get("remark")
         or not isinstance(payload.get("elements"), list)
-        or len(payload["elements"]) > MAX_FEATURES
+        or len(payload["elements"]) > max_features
     ):
         raise ValueError("Incomplete or oversized Overpass result")
     features, skipped, identifiers = [], [], set()
@@ -319,7 +343,9 @@ def normalize(payload):
                     "source_version": element.get("version"),
                     "source_timestamp": element.get("timestamp"),
                     "geometry_interpretation": "conservative_building_relation_bounds"
-                    if element["type"] == "relation" and tags.get("type") == "building"
+                    if element["type"] == "relation"
+                    and tags.get("type") in {"building", "site"}
+                    and kind == "exclusion_building"
                     else "mapped_geometry",
                     "tags": tags,
                     "canopy_representation": "unknown",
@@ -340,7 +366,7 @@ def normalize(payload):
 
     if (
         sum(count(feature["geometry"]["coordinates"]) for feature in features)
-        > MAX_COORDINATES
+        > max_coordinates
     ):
         raise ValueError("Vegetation geometry coordinate budget exceeded")
     return sorted(features, key=lambda feature: feature["id"]), skipped
@@ -424,7 +450,7 @@ def canopy_samples(
         or not math.isfinite(spacing)
         or not 6 <= spacing <= 30
         or type(max_canopies) is not int
-        or not 1 <= max_canopies <= 1500
+        or not 1 <= max_canopies <= 6000
     ):
         raise ValueError("Invalid artistic canopy spacing or budget")
     for bounds in primary_exclusions:
@@ -589,6 +615,9 @@ def write_package(
     spacing=10.0,
     primary_exclusions=(),
     public_reference=None,
+    max_canopies=1500,
+    max_features=MAX_FEATURES,
+    max_coordinates=MAX_COORDINATES,
 ):
     if (
         not isinstance(metadata, dict)
@@ -608,9 +637,16 @@ def write_package(
         or ".." in PurePosixPath(public_reference).parts
     ):
         raise ValueError("Public data reference must be a relative repository path")
-    features, skipped = normalize(payload)
+    features, skipped = normalize(
+        payload, max_features=max_features, max_coordinates=max_coordinates
+    )
     samples, representation = canopy_samples(
-        features, bbox, origin, spacing=spacing, primary_exclusions=primary_exclusions
+        features,
+        bbox,
+        origin,
+        spacing=spacing,
+        primary_exclusions=primary_exclusions,
+        max_canopies=max_canopies,
     )
     output = Path(output)
     if output.is_symlink() or (
