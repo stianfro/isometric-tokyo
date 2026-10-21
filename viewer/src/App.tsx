@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import OpenSeadragon from 'openseadragon'
 import { parseManifest, parseView, resolveManifestUrl, validateDescriptor, viewportHasCoverage, type AtlasManifest, type ViewState } from './atlas'
+import { formatAtlasView, framedHome, framedZoomLimits, parseAtlasView } from './framing'
 import { formatCollectionView, isCollection, parseCollection, selectedCollectionView, validateCollectionAtlas, type AtlasCollection, type AtlasCollectionView } from './collection'
 
 const manifestConfiguration = (() => {
@@ -114,7 +115,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
   const mapElement = useRef<HTMLDivElement>(null)
   const overviewElement = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<OpenSeadragon.Viewer | null>(null)
-  const [layer, setLayer] = useState(() => parseView(location.hash, atlas.layers.map((item) => item.id))?.layer ?? atlas.layers[0].id)
+  const [layer, setLayer] = useState(() => (context ? parseView(location.hash, atlas.layers.map((item) => item.id)) : parseAtlasView(atlas, location.hash))?.layer ?? atlas.layers[0].id)
   const layerRef = useRef(layer)
   const [loadedLayer, setLoadedLayer] = useState<string | null>(null)
   const ready = loadedLayer === layer
@@ -133,6 +134,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
   const sharedPilot = !context && Boolean(atlas.comparison_mode) && atlas.layers.some((item) => item.id === 'styled') && atlas.layers.some((item) => item.id === 'textured')
   const artPreview = collectionView?.kind === 'illustration-preview' || (!context && atlas.ai_styling && (sharedPilot ? layer === 'styled' : true))
   const coverHome = Boolean(collection) || atlas.ai_styling
+  const isCollectionView = Boolean(context)
 
   const currentView = useCallback((): ViewState | null => {
     const viewer = viewerRef.current
@@ -144,8 +146,8 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
   const saveView = useCallback(() => {
     const view = currentView()
     if (!view) return
-    history.replaceState(null, '', `${location.pathname}${location.search}${formatCollectionView(view, collectionView)}`)
-  }, [currentView, collectionView])
+    history.replaceState(null, '', `${location.pathname}${location.search}${collectionView ? formatCollectionView(view, collectionView) : formatAtlasView(atlas, view)}`)
+  }, [currentView, collectionView, atlas])
 
   useEffect(() => {
     if (!mapElement.current || !overviewElement.current) return
@@ -158,7 +160,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
     let lastReady: string | null | undefined
     let lastEmpty: boolean | undefined
     let sourceInvalid = false
-    const desired = parseView(location.hash, atlas.layers.map((item) => item.id))
+    const desired = isCollectionView ? parseView(location.hash, atlas.layers.map((item) => item.id)) : parseAtlasView(atlas, location.hash)
     const viewer = OpenSeadragon({
       element: mapElement.current,
       showNavigationControl: false,
@@ -173,8 +175,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       navigatorBackground: '#d5dade',
       visibilityRatio: 1,
       constrainDuringPan: true,
-      minZoomLevel: 0.1,
-      maxZoomLevel: 16,
+      ...(isCollectionView ? { minZoomLevel: 0.1, maxZoomLevel: 16 } : framedZoomLimits(atlas)),
       animationTime: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 0.25,
       blendTime: 0,
       immediateRender: true,
@@ -192,9 +193,9 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       viewer.viewport.applyConstraints(true)
     }
     const syncHash = () => {
-      const view = parseView(location.hash, atlas.layers.map((item) => item.id))
+      const view = isCollectionView ? parseView(location.hash, atlas.layers.map((item) => item.id)) : parseAtlasView(atlas, location.hash)
       if (collection && selectedCollectionView(collection, location.hash).id !== collectionView?.id) return
-      if (view && viewer.isOpen()) { setLayer(view.layer); layerRef.current = view.layer; apply(view) }
+      if (view && viewer.isOpen()) { setLayer(view.layer); layerRef.current = view.layer; apply(view); saveView() }
     }
     const initialize = () => {
       if (!active) return
@@ -213,7 +214,10 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       }
       atlas.layers.forEach((item, index) => viewer.world.getItemAt(index).setOpacity(item.id === layerRef.current ? 1 : 0))
       if (desired) apply(desired)
-      else {
+      else if (!isCollectionView && atlas.coordinate_frame) {
+        const size = viewer.viewport.getContainerSize()
+        apply(framedHome(atlas, size.x, size.y, layerRef.current)!)
+      } else {
         viewer.viewport.goHome(true)
         if (!coverHome) viewer.viewport.zoomBy(1.12, undefined, true)
       }
@@ -247,7 +251,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       viewer.destroy()
       viewerRef.current = null
     }
-  }, [atlas, imageAspect, manifestUrl, retry, saveView, collection, collectionView, overview, coverHome, sharedPilot])
+  }, [atlas, imageAspect, manifestUrl, retry, saveView, collection, collectionView, overview, coverHome, sharedPilot, isCollectionView])
 
   useEffect(() => {
     layerRef.current = layer
@@ -273,8 +277,26 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
     viewerRef.current?.viewport.applyConstraints()
   }
 
+  function selectLayer(next: string) {
+    if (next === layer) return
+    const view = currentView()
+    if (!context && atlas.coordinate_frame && view) {
+      history.pushState(null, '', `${location.pathname}${location.search}${formatAtlasView(atlas, { ...view, layer: next })}`)
+    }
+    layerRef.current = next
+    setLayer(next)
+  }
+
   function reset() {
-    viewerRef.current?.viewport.goHome()
+    const viewport = viewerRef.current?.viewport
+    if (!viewport) return
+    const size = viewport.getContainerSize()
+    const home = !context && framedHome(atlas, size.x, size.y, layerRef.current)
+    if (home) {
+      viewport.zoomTo(home.z)
+      viewport.panTo(new OpenSeadragon.Point(home.x, home.y * imageAspect))
+      viewport.applyConstraints()
+    } else viewport.goHome()
   }
 
   function keyboard(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -307,7 +329,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
     <nav className="map-toolbar" aria-label="Map navigation">
       <a className="wordmark" href={location.pathname} aria-label="isometric.tokyo, reset map">isometric.tokyo</a>
       {context && <ViewToggle context={context} />}
-      {sharedPilot && <button className="view-toggle" aria-label={`Show ${layer === 'styled' ? 'Source' : 'Pixel city'} view`} onClick={() => setLayer(layer === 'styled' ? 'textured' : 'styled')}>{layer === 'styled' ? 'Source' : 'Pixel city'}</button>}
+      {sharedPilot && <button className="view-toggle" aria-label={`Show ${layer === 'styled' ? 'Source' : 'Pixel city'} view`} onClick={() => selectLayer(layer === 'styled' ? 'textured' : 'styled')}>{layer === 'styled' ? 'Source' : 'Pixel city'}</button>}
       <button className="icon-button" aria-label="Zoom in" onClick={() => zoomBy(1.5)}><Icon name="plus" /></button>
       <button className="icon-button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.5)}><Icon name="minus" /></button>
       <button className="icon-button" aria-label="About this map and credits" onClick={() => setInfo(true)}><Icon name="info" /></button>
@@ -334,11 +356,11 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
         <button aria-label="Copy link to this view" onClick={() => { void share(); setInfo(false) }}><Icon name="share" />Copy link</button>
       </div>
       {atlas.layers.length > 1 && <div className="layer-control" role="group" aria-label="Map layers">
-        {atlas.layers.length > 3 ? <label>Map layer<select value={layer} onChange={(event) => setLayer(event.target.value)}>{atlas.layers.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label> : atlas.layers.map((item) => <button key={item.id} aria-pressed={layer === item.id} onClick={() => setLayer(item.id)}>{item.label}</button>)}
+        {atlas.layers.length > 3 ? <label>Map layer<select value={layer} onChange={(event) => selectLayer(event.target.value)}>{atlas.layers.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label> : atlas.layers.map((item) => <button key={item.id} aria-pressed={layer === item.id} onClick={() => selectLayer(item.id)}>{item.label}</button>)}
       </div>}
       {context && context.collection.views.length > 2 && <div className="layer-control" role="group" aria-label="All map views">{context.collection.views.map((view) => <button key={view.id} aria-pressed={view.id === collectionView?.id} onClick={() => context.select(view)}>{view.label}</button>)}</div>}
       {artPreview && <p className="view-warning">AI illustration. Geography not verified. Not a navigation map.</p>}
-      <p>{sharedPilot ? (artPreview ? 'Explore a bounded, nine-patch Pixel city pilot of Shinjuku. The illustration uses a native-resolution source render, but AI may change buildings, streets and vegetation. This is not a complete Tokyo map.' : 'This is the unchanged native-resolution 3D source render beneath the nine-patch Shinjuku art pilot. It is not a complete Tokyo map.') : artPreview ? 'Explore an AI-styled Shinjuku image in the Pixel city direction. This is a bounded art preview, not a completed or geographically verified city map.' : 'This is a small, explorable source study for an illustrated map of Tokyo. It is not the finished city map.'}</p>
+      <p>{sharedPilot ? (artPreview ? `Explore a bounded, ${atlas.coordinate_frame ? 'expanding' : 'nine-patch'} Pixel city pilot of Shinjuku. The illustration uses a native-resolution source render, but AI may change buildings, streets and vegetation. This is not a complete Tokyo map.` : `This is the unchanged native-resolution 3D source render beneath the ${atlas.coordinate_frame ? 'expanding' : 'nine-patch'} Shinjuku art pilot. It is not a complete Tokyo map.`) : artPreview ? 'Explore an AI-styled Shinjuku image in the Pixel city direction. This is a bounded art preview, not a completed or geographically verified city map.' : 'This is a small, explorable source study for an illustrated map of Tokyo. It is not the finished city map.'}</p>
       {sharedPilot && <p className="view-warning">Source and Pixel city share framing, so switching keeps your position. This does not mean buildings or streets are pixel-aligned. Geographic fidelity is not verified. Not a navigation map.</p>}
       {context && <p className="view-warning">{artPreview ? 'The illustration redraws buildings, trees and streets. Open the Source view to inspect the underlying 3D render. The two views are not pixel-aligned, so switching resets the framing.' : 'This is the unstyled 3D source render used for the art study. It has its own image coordinates. Switching to Pixel city resets the framing rather than implying an aligned comparison.'}</p>}
       <dl><div><dt>Coverage</dt><dd>{atlas.coverage.label}</dd></div><div><dt>Source edition</dt><dd>{atlas.source_edition}</dd></div><div><dt>Atlas</dt><dd>{atlas.id}</dd></div><div><dt>AI styling</dt><dd>{artPreview ? 'Applied. Artistic details may be invented or changed.' : sharedPilot ? 'None in this view. These are direct 3D source renders.' : 'None. These are direct 3D source renders.'}</dd></div>{atlas.bounds_px && <div><dt>Atlas pixel bounds</dt><dd>{atlas.bounds_px.join(', ')}</dd></div>}{atlas.source_coverage_verified !== undefined && <div><dt>Source completeness</dt><dd>{atlas.source_coverage_verified ? 'Verified for this release.' : 'Not verified. Rendered bounds do not prove complete geographic data.'}</dd></div>}{atlas.artwork_approved !== undefined && <div><dt>Artwork approval</dt><dd>{atlas.artwork_approved ? 'Approved for this release.' : artPreview ? 'Art direction selected. Geographic fidelity and production artwork are not approved.' : 'Not approved. This is a source or working release.'}</dd></div>}</dl>

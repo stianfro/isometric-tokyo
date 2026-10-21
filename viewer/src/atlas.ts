@@ -20,6 +20,9 @@ export interface AtlasManifest {
   attribution: { label: string; url: string }[]
   coverage: { label: string; bbox: Bounds; rectangles_px?: Bounds[] }
   bounds_px?: Bounds
+  coordinate_frame?: { id: string; units: 'pixels' }
+  legacy_view_bounds?: Bounds
+  home_bounds?: Bounds
   place?: { name: string; name_ja?: string }
   artwork_approved?: boolean
   source_coverage_verified?: boolean
@@ -103,6 +106,18 @@ export function parseManifest(input: unknown): AtlasManifest {
   const height = integer(data.height, 1, 100_000_000)
   const bounds = data.bounds_px === undefined ? undefined : pixelBounds(data.bounds_px)
   if (bounds && (bounds[2] - bounds[0] !== width || bounds[3] - bounds[1] !== height)) throw new Error('Atlas bounds disagree with image size')
+  let framing: Pick<AtlasManifest, 'coordinate_frame' | 'legacy_view_bounds' | 'home_bounds'> = {}
+  const frameFields = ['coordinate_frame', 'legacy_view_bounds', 'home_bounds']
+  if (frameFields.some((field) => data[field] !== undefined)) {
+    if (!bounds || frameFields.some((field) => data[field] === undefined)) throw new Error('Incomplete coordinate frame')
+    if (data.ai_styling && (!data.comparison_mode || !['styled', 'textured'].every((id) => layers.some((layer) => layer.id === id)))) throw new Error('Coordinate frame requires shared native layers or a deterministic source atlas')
+    const frame = record(data.coordinate_frame)
+    if (frame.units !== 'pixels') throw new Error('Unsupported coordinate frame units')
+    const legacy = pixelBounds(data.legacy_view_bounds)
+    const home = pixelBounds(data.home_bounds)
+    if ([legacy, home].some((box) => box[0] < bounds[0] || box[1] < bounds[1] || box[2] > bounds[2] || box[3] > bounds[3])) throw new Error('View bounds are outside the coordinate frame')
+    framing = { coordinate_frame: { id: identifier(frame.id), units: 'pixels' }, legacy_view_bounds: legacy, home_bounds: home }
+  }
   let rectangles: Bounds[] | undefined
   if (coverage.rectangles_px !== undefined) {
     if (!bounds || !Array.isArray(coverage.rectangles_px) || !coverage.rectangles_px.length || coverage.rectangles_px.length > 100_000) throw new Error('Invalid rendered coverage')
@@ -121,6 +136,7 @@ export function parseManifest(input: unknown): AtlasManifest {
     format: data.format as AtlasManifest['format'], layers, attribution,
     coverage: { label: label(coverage.label), bbox: [west, south, east, north], ...(rectangles ? { rectangles_px: rectangles } : {}) },
     ...(bounds ? { bounds_px: bounds } : {}),
+    ...framing,
     ...(place ? { place: { name: label(place.name), ...(place.name_ja === undefined ? {} : { name_ja: label(place.name_ja) }) } } : {}),
     ...(data.artwork_approved === undefined ? {} : { artwork_approved: data.artwork_approved as boolean }),
     ...(data.source_coverage_verified === undefined ? {} : { source_coverage_verified: data.source_coverage_verified as boolean }),
