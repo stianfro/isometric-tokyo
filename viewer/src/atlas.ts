@@ -25,6 +25,7 @@ export interface AtlasManifest {
   source_coverage_verified?: boolean
   source_edition: string
   ai_styling: boolean
+  comparison_mode?: 'shared-framing-unverified' | 'reviewed-approximate'
   modifications?: string
   limitations?: string
   notice?: string
@@ -96,6 +97,7 @@ export function parseManifest(input: unknown): AtlasManifest {
   if (west < -180 || east > 180 || south < -90 || north > 90 || west >= east || south >= north) throw new Error('Invalid coverage bounds')
   if (!['webp', 'png', 'jpg'].includes(String(data.format))) throw new Error('Unsupported tile format')
   if (typeof data.ai_styling !== 'boolean') throw new Error('Missing style provenance')
+  if (data.comparison_mode !== undefined && !['shared-framing-unverified', 'reviewed-approximate'].includes(String(data.comparison_mode))) throw new Error('Invalid comparison mode')
   const tileSize = integer(data.tile_size, 16, 2048)
   const width = integer(data.width, 1, 100_000_000)
   const height = integer(data.height, 1, 100_000_000)
@@ -123,6 +125,7 @@ export function parseManifest(input: unknown): AtlasManifest {
     ...(data.artwork_approved === undefined ? {} : { artwork_approved: data.artwork_approved as boolean }),
     ...(data.source_coverage_verified === undefined ? {} : { source_coverage_verified: data.source_coverage_verified as boolean }),
     source_edition: label(data.source_edition), ai_styling: data.ai_styling,
+    ...(data.comparison_mode === undefined ? {} : { comparison_mode: data.comparison_mode as AtlasManifest['comparison_mode'] }),
     ...(data.modifications === undefined ? {} : { modifications: label(data.modifications) }),
     ...(data.limitations === undefined ? {} : { limitations: label(data.limitations) }),
     ...(data.notice === undefined ? {} : { notice: assetPath(data.notice) }),

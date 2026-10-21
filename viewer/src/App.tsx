@@ -130,7 +130,9 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
   const placeName = atlas.place?.name ?? atlas.title
   const collection = context?.collection
   const collectionView = context?.view
-  const artPreview = collectionView?.kind === 'illustration-preview'
+  const sharedPilot = !context && Boolean(atlas.comparison_mode) && atlas.layers.some((item) => item.id === 'styled') && atlas.layers.some((item) => item.id === 'textured')
+  const artPreview = collectionView?.kind === 'illustration-preview' || (!context && atlas.ai_styling && (sharedPilot ? layer === 'styled' : true))
+  const coverHome = Boolean(collection) || atlas.ai_styling
 
   const currentView = useCallback((): ViewState | null => {
     const viewer = viewerRef.current
@@ -161,7 +163,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       element: mapElement.current,
       showNavigationControl: false,
       showNavigator: overview,
-      homeFillsViewer: Boolean(collection),
+      homeFillsViewer: coverHome,
       navigatorElement,
       navigatorAutoFade: false,
       navigatorDisplayRegionColor: '#215bd6',
@@ -211,7 +213,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       if (desired) apply(desired)
       else {
         viewer.viewport.goHome(true)
-        if (!collection) viewer.viewport.zoomBy(1.12, undefined, true)
+        if (!coverHome) viewer.viewport.zoomBy(1.12, undefined, true)
       }
       saveView()
     }
@@ -243,7 +245,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       viewer.destroy()
       viewerRef.current = null
     }
-  }, [atlas, imageAspect, manifestUrl, retry, saveView, collection, collectionView, overview])
+  }, [atlas, imageAspect, manifestUrl, retry, saveView, collection, collectionView, overview, coverHome])
 
   useEffect(() => {
     layerRef.current = layer
@@ -303,6 +305,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
     <nav className="map-toolbar" aria-label="Map navigation">
       <a className="wordmark" href={location.pathname} aria-label="isometric.tokyo, reset map">isometric.tokyo</a>
       {context && <ViewToggle context={context} />}
+      {sharedPilot && <button className="view-toggle" aria-label={`Show ${layer === 'styled' ? 'Source' : 'Pixel city'} view`} onClick={() => setLayer(layer === 'styled' ? 'textured' : 'styled')}>{layer === 'styled' ? 'Source' : 'Pixel city'}</button>}
       <button className="icon-button" aria-label="Zoom in" onClick={() => zoomBy(1.5)}><Icon name="plus" /></button>
       <button className="icon-button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.5)}><Icon name="minus" /></button>
       <button className="icon-button" aria-label="About this map and credits" onClick={() => setInfo(true)}><Icon name="info" /></button>
@@ -317,7 +320,7 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
     {failure && <div className="map-notice failure" role="alert"><strong>{failure === 'source' ? 'This map layer could not open.' : 'Some map tiles could not load.'}</strong><span>{failure === 'source' ? 'The image source is missing or does not match the atlas.' : 'The missing imagery is a loading failure, not empty city.'}</span><button onClick={() => { setLoadedLayer(null); setFailure(null); setRetry((value) => value + 1) }}>Retry map</button></div>}
     {message && <div className="map-notice toast" role="status">{message}</div>}
 
-    <button className="credit-button" onClick={() => setInfo(true)}>{artPreview ? 'AI preview' : atlas.ai_styling ? 'Illustrated map' : 'Source'} · Credits</button>
+    <button className="credit-button" onClick={() => setInfo(true)}>{artPreview ? 'AI preview' : 'Source'} · Credits</button>
     <p id="map-help" className="sr-only">Drag to explore. Scroll or pinch to zoom. Focus the map for arrow keys. Use the information button for controls and credits.</p>
 
     <dialog ref={dialog} className="info-dialog" aria-labelledby="about-title" onCancel={() => setInfo(false)} onClick={(event) => { if (event.target === dialog.current) setInfo(false) }}>
@@ -333,9 +336,10 @@ function AtlasMap({ atlas, manifestUrl, context }: { atlas: AtlasManifest; manif
       </div>}
       {context && context.collection.views.length > 2 && <div className="layer-control" role="group" aria-label="All map views">{context.collection.views.map((view) => <button key={view.id} aria-pressed={view.id === collectionView?.id} onClick={() => context.select(view)}>{view.label}</button>)}</div>}
       {artPreview && <p className="view-warning">AI illustration. Geography not verified. Not a navigation map.</p>}
-      <p>{artPreview ? 'Explore an AI-styled Shinjuku image in the Pixel city direction. This is a bounded art preview, not a completed or geographically verified city map.' : 'This is a small, explorable source study for an illustrated map of Tokyo. It is not the finished city map.'}</p>
+      <p>{sharedPilot ? (artPreview ? 'Explore a bounded, nine-patch Pixel city pilot of Shinjuku. The illustration uses a native-resolution source render, but AI may change buildings, streets and vegetation. This is not a complete Tokyo map.' : 'This is the unchanged native-resolution 3D source render beneath the nine-patch Shinjuku art pilot. It is not a complete Tokyo map.') : artPreview ? 'Explore an AI-styled Shinjuku image in the Pixel city direction. This is a bounded art preview, not a completed or geographically verified city map.' : 'This is a small, explorable source study for an illustrated map of Tokyo. It is not the finished city map.'}</p>
+      {sharedPilot && <p className="view-warning">Source and Pixel city share framing, so switching keeps your position. This does not mean buildings or streets are pixel-aligned. Geographic fidelity is not verified. Not a navigation map.</p>}
       {context && <p className="view-warning">{artPreview ? 'The illustration redraws buildings, trees and streets. Open the Source view to inspect the underlying 3D render. The two views are not pixel-aligned, so switching resets the framing.' : 'This is the unstyled 3D source render used for the art study. It has its own image coordinates. Switching to Pixel city resets the framing rather than implying an aligned comparison.'}</p>}
-      <dl><div><dt>Coverage</dt><dd>{atlas.coverage.label}</dd></div><div><dt>Source edition</dt><dd>{atlas.source_edition}</dd></div><div><dt>Atlas</dt><dd>{atlas.id}</dd></div><div><dt>AI styling</dt><dd>{artPreview ? 'Applied. Artistic details may be invented or changed.' : atlas.ai_styling ? 'Applied. Compare against source imagery.' : 'None. These are direct 3D source renders.'}</dd></div>{atlas.bounds_px && <div><dt>Atlas pixel bounds</dt><dd>{atlas.bounds_px.join(', ')}</dd></div>}{atlas.source_coverage_verified !== undefined && <div><dt>Source completeness</dt><dd>{atlas.source_coverage_verified ? 'Verified for this release.' : 'Not verified. Rendered bounds do not prove complete geographic data.'}</dd></div>}{atlas.artwork_approved !== undefined && <div><dt>Artwork approval</dt><dd>{atlas.artwork_approved ? 'Approved for this release.' : artPreview ? 'Art direction selected. Geographic fidelity and production artwork are not approved.' : 'Not approved. This is a source or working release.'}</dd></div>}</dl>
+      <dl><div><dt>Coverage</dt><dd>{atlas.coverage.label}</dd></div><div><dt>Source edition</dt><dd>{atlas.source_edition}</dd></div><div><dt>Atlas</dt><dd>{atlas.id}</dd></div><div><dt>AI styling</dt><dd>{artPreview ? 'Applied. Artistic details may be invented or changed.' : sharedPilot ? 'None in this view. These are direct 3D source renders.' : 'None. These are direct 3D source renders.'}</dd></div>{atlas.bounds_px && <div><dt>Atlas pixel bounds</dt><dd>{atlas.bounds_px.join(', ')}</dd></div>}{atlas.source_coverage_verified !== undefined && <div><dt>Source completeness</dt><dd>{atlas.source_coverage_verified ? 'Verified for this release.' : 'Not verified. Rendered bounds do not prove complete geographic data.'}</dd></div>}{atlas.artwork_approved !== undefined && <div><dt>Artwork approval</dt><dd>{atlas.artwork_approved ? 'Approved for this release.' : artPreview ? 'Art direction selected. Geographic fidelity and production artwork are not approved.' : 'Not approved. This is a source or working release.'}</dd></div>}</dl>
       <h3>Read the gaps, too.</h3>
       <p>{artPreview ? 'Buildings, paths, vegetation and road widths can differ from the source. A preferred visual style is not approval of geographic accuracy. Coverage ends at the image edge.' : 'White buildings can indicate missing textures or lower-detail geometry. Vegetation may include mapped trees and artistic woodland fill. Source datasets can have mixed building detail, acquisition dates and alignment limitations. It is not a live map or a navigation aid.'}</p>
       <p>{atlas.limitations}</p>

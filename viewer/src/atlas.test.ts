@@ -119,3 +119,12 @@ describe('chunk-rendered atlas contract', () => {
     expect(() => validateDescriptor(atlas, { ...source, rectangles: [{ ...source.rectangles[0], minLevel: 1 }, source.rectangles[1]] })).toThrow()
   })
 })
+
+describe('bounded AI comparison metadata', () => {
+  it('retains explicit framing limits without claiming registration', () => {
+    for (const comparison_mode of ['shared-framing-unverified', 'reviewed-approximate']) {
+      expect(parseManifest({ ...fixture, comparison_mode }).comparison_mode).toBe(comparison_mode)
+    }
+    expect(() => parseManifest({ ...fixture, comparison_mode: 'pixel-perfect' })).toThrow('Invalid comparison mode')
+  })
+})
