@@ -16,6 +16,7 @@ import art_pilot as pilot
 import build_map_release as release
 import test_build_map_release as fixtures
 from atlas import load_config
+from render_expansion_source import source_provenance
 
 ROOT = Path(__file__).resolve().parents[1]
 ORDER = json.loads((ROOT / "configs/shinjuku-expansion-order.json").read_text())
@@ -59,6 +60,7 @@ class ExpansionTests(unittest.TestCase):
             )
         )
         cls.source_provenance = {
+            "context_coverage": "Synthetic Shinjuku-only context fixture. Adjacent buildings do not imply adjacent source context coverage.",
             "building_sources": [
                 {
                     "label": "Synthetic PLATEAU FY2025 source fixture",
@@ -347,6 +349,93 @@ class ExpansionTests(unittest.TestCase):
         ):
             with self.assertRaises(ValueError):
                 expansion.repair_geometry("invalid", bounds, window)
+
+    def test_source_producer_context_contract_is_retained_in_public_evidence(self):
+        building = self.root / "buildings.json"
+        vegetation = self.root / "vegetation.json"
+        pilot.write_json(
+            building,
+            {
+                "sources": [
+                    {
+                        "ward_name": "Shinjuku",
+                        "edition": 2025,
+                        "required_tiles": 1,
+                        "package": {
+                            "url": "https://www.geospatial.jp/ckan/dataset/plateau-13104-shinjuku-ku-2025"
+                        },
+                    }
+                ]
+            },
+        )
+        pilot.write_json(
+            vegetation, {"source": {"snapshot_range": [self.snapshot, self.snapshot]}}
+        )
+        actual = source_provenance(building, vegetation, self.expansion_data)
+        self.assertEqual(release.validate_source_provenance(actual), actual)
+        self.assertIn("selected from Shinjuku only", actual["context_coverage"])
+        evidence = self.evidence()
+        evidence["source_provenance"] = actual
+        pilot.write_json(self.work / "evidence.json", evidence)
+        _, _, public, _ = self.validate()
+        self.assertEqual(public["source_provenance"], actual)
+        for note in (
+            "",
+            "x" * 1501,
+            "/Users/example/private/source",
+            "Source https://example.org/context",
+            "See www.example.org",
+        ):
+            with self.assertRaises(ValueError):
+                release.validate_source_provenance({**actual, "context_coverage": note})
+
+    def test_new_repairs_cannot_replace_parent_interiors_or_stay_inside_parent(self):
+        cases = [
+            ([1024, 1024, 2048, 2048], [900, 900, 2154, 2154]),
+            ([10, 1000, 100, 1100], [0, 700, 1254, 1954]),
+            ([-20, 1000, 257, 1100], [-200, 700, 1054, 1954]),
+            ([2815, 1000, 3100, 1100], [2740, 700, 3994, 1954]),
+            ([1000, -20, 1100, 257], [700, -200, 1954, 1054]),
+            ([1000, 2815, 1100, 3100], [700, 2740, 1954, 3994]),
+        ]
+        original = self.evidence()
+        for box, window in cases:
+            with self.subTest(box=box):
+                with self.assertRaisesRegex(ValueError, "parent"):
+                    expansion.repair_geometry("interior", box, window)
+                evidence = json.loads(json.dumps(original))
+                evidence["repairs"].append(
+                    {"id": "interior", "bounds_px": box, "source_bounds_px": window}
+                )
+                # This independently exported evidence bypasses the art helper.
+                pilot.write_json(self.work / "evidence.json", evidence)
+                with self.assertRaisesRegex(ValueError, "parent"):
+                    self.validate()
+
+    def test_parent_frontier_exact_protected_boundaries_and_new_only_repairs(self):
+        cases = [
+            ([-20, 1000, 256, 1100], [-200, 700, 1054, 1954]),
+            ([2816, 1000, 3100, 1100], [2740, 700, 3994, 1954]),
+            ([1000, -20, 1100, 256], [700, -200, 1954, 1054]),
+            ([1000, 2816, 1100, 3100], [700, 2740, 1954, 3994]),
+            ([-1000, 1000, 0, 1100], [-1024, 700, 230, 1954]),
+            ([3072, 1000, 3200, 1100], [2842, 700, 4096, 1954]),
+        ]
+        for box, window in cases:
+            with self.subTest(box=box):
+                self.assertEqual(
+                    expansion.repair_geometry("frontier", box, window)["bounds_px"], box
+                )
+                evidence = self.evidence()
+                evidence["repairs"].append(
+                    {"id": "frontier", "bounds_px": box, "source_bounds_px": window}
+                )
+                release.validate_expansion_parent(evidence, self.work)
+        # The synthetic parent's historical repair is central and remains valid.
+        self.assertEqual(
+            self.evidence()["repairs"][0]["bounds_px"], [1000, 1000, 1048, 1048]
+        )
+        self.validate()
 
     def test_actual_expanded_database_and_snapshot_are_bound_to_source_receipt(self):
         evidence = self.evidence()

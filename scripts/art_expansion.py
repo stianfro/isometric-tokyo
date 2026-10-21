@@ -203,6 +203,7 @@ def repair_geometry(ident, bounds, window):
         or (bounds[2] - bounds[0]) * (bounds[3] - bounds[1]) > CORE * CORE
     ):
         raise ValueError("Repair must be a bounded exact crop of a native 1254 window")
+    release.validate_parent_frontier_repair(bounds)
     return {
         "id": ident,
         "bounds_px": bounds,

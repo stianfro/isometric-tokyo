@@ -67,8 +67,15 @@ def public_inputs(evidence):
 
 
 def validate_source_provenance(value):
-    if not isinstance(value, dict) or set(value) != {"building_sources", "vegetation"}:
+    if not isinstance(value, dict) or set(value) != {
+        "building_sources",
+        "vegetation",
+        "context_coverage",
+    }:
         raise ValueError("Expansion source provenance is required")
+    coverage = text(value["context_coverage"], 1500)
+    if re.search(r"(?:[a-z][a-z0-9+.-]*://|www\.)", coverage, re.IGNORECASE):
+        raise ValueError("Context coverage must be explanatory text, not a URL")
     sources, vegetation = value["building_sources"], value["vegetation"]
     if not isinstance(sources, list) or not 1 <= len(sources) <= 8:
         raise ValueError("Expected bounded actual building source editions")
@@ -483,6 +490,31 @@ def parent_proof(directory, ident):
     return index, evidence, files
 
 
+def validate_parent_frontier_repair(box):
+    """New repairs may cross the parent perimeter, never replace its interior.
+
+    Rectangles are half-open. A boundary exactly at 256 or 2816 preserves the
+    protected pixels, while moving one pixel farther into the parent does not.
+    Original parent repairs are verified separately and are exempt from this rule.
+    """
+    box = rectangle(box)
+
+    def overlaps(other):
+        return max(box[0], other[0]) < min(box[2], other[2]) and max(
+            box[1], other[1]
+        ) < min(box[3], other[3])
+
+    if not overlaps(LEGACY_BOUNDS):
+        return box
+    if all((box[0] >= 0, box[1] >= 0, box[2] <= SIZE, box[3] <= SIZE)):
+        raise ValueError(
+            "New repairs touching parent artwork must cross its outer perimeter"
+        )
+    if overlaps((256, 256, SIZE - 256, SIZE - 256)):
+        raise ValueError("New repairs cannot intersect the protected parent interior")
+    return box
+
+
 def validate_expansion_parent(evidence, base):
     parent = evidence["parent"]
     if (
@@ -522,7 +554,7 @@ def validate_expansion_parent(evidence, base):
         )
     for record in repairs[len(historical) :]:
         window = rectangle(record["source_bounds_px"])
-        box = rectangle(record["bounds_px"])
+        box = validate_parent_frontier_repair(record["bounds_px"])
         if (
             window[2] - window[0] != 1254
             or window[3] - window[1] != 1254
