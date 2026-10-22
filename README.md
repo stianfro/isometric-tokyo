@@ -4,33 +4,34 @@ An independent illustrated isometric map of Tokyo in development, using open
 Project PLATEAU data. The goal is a continuous, explorable map in the same product
 category as [isometric.nyc](https://isometric.nyc/), with original Tokyo artwork.
 
-**Current state:** a native **3072 × 3072 Pixel city pilot** of Shinjuku, assembled
-from nine 1024 × 1024 artwork cores. Nine separate native 1254 × 1254 generations
-supply the initial exact crops; bounded repairs address details found during
-review through recorded exact overwrites, not upscaling or blending. This adds
-detail to the same bounded source view, not more geography or a completed district.
-All 12 internal joins and four junctions passed recorded visual review after one
-bounded rooftop repair. Source comparison remains approximate, not geographic approval.
+**Current artifact:** a native **5120 × 5120 Pixel city map** around Shinjuku,
+assembled from 25 exact 1024 × 1024 cores. Sixteen new neighboring cores expand
+the nine-core pilot at the same detail scale, about 2.78 times its image area.
+Four bounded repairs resolved reviewed joins without upscaling or blending.
+All 40 joins, 16 junctions and repair boundaries passed recorded visual inspection.
+The protected original-map interior remains unchanged. This is a bounded
+expansion, not a completed district or a geographically approved map.
 
 The full-screen viewer keeps a compact toolbar, source access and shareable
-positions. Switching the native pilot's Source/Pixel city layers preserves framing,
+positions. Switching the native map's Source/Pixel city layers preserves framing,
 not pixel registration or geographic accuracy. Fine facade, roof, planting and
 park-path details are artistic. Geographic fidelity and production artwork remain
-unapproved. See [pilot results and downloads](docs/NATIVE_PILOT_RESULTS.md)
-and [the native pilot workflow](docs/NATIVE_PILOT.md).
+unapproved. See [expansion results and downloads](docs/NATIVE_EXPANSION_RESULTS.md)
+and [the native expansion workflow](docs/NATIVE_EXPANSION.md).
 
-A [5 × 5 expansion workflow](docs/NATIVE_EXPANSION.md) adds sixteen neighboring
-cores at the same native scale, retaining the accepted pilot artwork and stable
-map coordinates. Its new source, artwork and reviews must pass before it becomes
-the selected map. This is a bounded next batch, not complete Shinjuku coverage.
+Stable global map coordinates preserve earlier native-map links and the original
+home view. The [earlier pilot](docs/NATIVE_PILOT_RESULTS.md) remains available.
+First-view image payload is still above the 3 MiB target on the tested desktop
+and mobile viewports; exact measurements and source limitations accompany the results.
 
 ![Earlier Pixel city Shinjuku art-direction study, AI-assisted](previews/shinjuku-art/ai-pixel-city.png)
 
-*The image above is the earlier 1254-pixel direction study, not the new nine-core
+*The image above is the earlier 1254-pixel direction study, not the 25-core
 atlas. It remains the committed quick-start preview.*
 
-Derived from Tokyo Metropolitan Government / Project PLATEAU, Shinjuku, Shibuya
-and Nakano FY2025, and PLATEAU-Ortho 2023.
+The expansion is derived from Tokyo Metropolitan Government / Project PLATEAU,
+Shinjuku, Shibuya, Nakano and Suginami FY2025, and PLATEAU-Ortho 2023.
+The earlier study above uses Shinjuku, Shibuya and Nakano only.
 Terrain: **PLATEAU | Mapterhorn | 国土地理院**.
 Vegetation: **© OpenStreetMap contributors**, ODbL.
 Selected, transformed and rendered, then AI-styled. Roofs, planting, surfaces
@@ -95,7 +96,7 @@ is a geometry-accurate comparison layer or approved artwork. Source credits and
 terms above still apply. [Prompts, provenance and limitations](previews/shinjuku-art/ai-studies.json)
 are retained. The historical `preview-dev` study opens Pixel city by default and
 keeps its differently sized source render as a distinct view. That study resets
-framing on view changes. The new native pilot instead uses a shared 3072-pixel
+framing on view changes. The native map instead uses a shared global pixel
 frame, while explicitly rejecting any claim of pixel-level geographic registration.
 
 ## Roadmap

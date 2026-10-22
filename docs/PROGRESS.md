@@ -7,7 +7,7 @@ source-quality result as the finished illustrated Tokyo map.
 | --- | --- | --- |
 | 1: interactive source map | Implemented and tested | Tiled source/geometry viewer, minimap, keyboard/touch controls, shared views, credits, errors and matching atlas contract |
 | 2: repeatable source atlas | In progress | Global pixel grid, no geometry cuts at chunk edges, corrected ground mapping, real and synthetic 3 x 3 seam checks, exact building-ID/depth/normal/semantic guides, 23-ward metadata inventory; road/water context with original feature IDs; bounded camera/sun source-selection audit, native terrain edge welding and separately attributed mapped vegetation; actual-world completeness and remaining vertical disagreements still need review |
-| 3: art direction | Pixel city preferred | Owner preference remains separate from geographic approval; nine native artwork cores generated for the existing bounded view, with exact source/structural guides and hash-bound manual seam/source review before release; bulk artwork remains gated |
+| 3: art direction | Pixel city preferred | Owner preference remains separate from geographic approval; 25 native artwork cores in the bounded expansion, exact source/structural guides and hash-bound manual seam/source review; further bulk artwork remains gated |
 | 4: production workflow | In progress | Resumable bounded render batches, leases/retries, checksum-gated review desk, sparse image pyramids and incremental rebuilds; bounded paired seam review, immutable repair import and reviewed repair-aware chunk export; native-window generation ingestion, exact crop export, hash-bound seam/source review and content-addressed map/web bundles; map-based review navigation and complete art-generation accounting remain |
 | 5: illustrated Shinjuku | Pending | Requires approved art direction, complete local source treatment and district-wide review |
 | 6: connected Tokyo expansion | Pending | Requires district measurements and accepted coverage batches |
@@ -110,14 +110,23 @@ source-quality result as the finished illustrated Tokyo map.
 See [native generation and review](NATIVE_PILOT.md) for the actual commands,
 required source inputs and limits.
 
-## Five-by-five expansion in progress
+## Verified five-by-five expansion artifact
 
-The next bounded batch adds sixteen 1024-pixel cores around the nine accepted
-cores, producing a native 5120-square image at unchanged pixel density. The
-original camera and global pixel origin are fixed. New source downloads,
-global-coordinate shared views, immutable parent proof retention and 56-region
-seam review are implemented. Native rendering, actual artwork generation and
-final artifact inspection are separate gates, not implied by passing fixtures.
+Sixteen new 1024-pixel cores extend the nine accepted cores into a native
+5120-square image at unchanged pixel density. The original camera and global
+pixel origin remain fixed. Native source rendering, sixteen actual main
+generations, four new bounded repairs and visual review of all 56 joins and
+junctions are complete. Every repair boundary passed separate inspection.
+All 6,553,600 protected original-map interior pixels remain unchanged.
+
+The immutable artifact contains 1,094 image tiles and independently verifies
+from the retained original crops and repairs. Stable global-coordinate links
+preserve the original home view and old native links. The exact web bundle passed
+27 checks on each of desktop and mobile, separately from 60 fixture browser tests.
+First-view imagery is 5,104,556 bytes on desktop and 3,425,226 bytes on mobile,
+both above the 3 MiB target. These are local image-byte counts, not network timings.
+See [expansion results and downloads](NATIVE_EXPANSION_RESULTS.md) for identities,
+checksums, measurements and source limits. An artifact is not a publication claim.
 
 The new source selection includes 259 building tiles across Shinjuku, Shibuya,
 Nakano and Suginami. Its separately attributed adapted OSM database retains
